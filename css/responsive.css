@@ -1,0 +1,49 @@
+/* ==========================================================
+   FarNaz Tech – Responsive Stylesheet (mobile-first overrides)
+   Loaded after style.css. Breakpoints: 1100 / 900 / 700 / 480
+   ========================================================== */
+
+@media (max-width:1100px){
+  .product-grid{grid-template-columns:repeat(3,1fr)}
+  .cat-grid{grid-template-columns:repeat(4,1fr)}
+  .brand-grid{grid-template-columns:repeat(4,1fr)}
+  .hero-slide{padding:44px 40px}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:32px}
+}
+
+@media (max-width:900px){
+  :root{--header-h:64px}
+  .menu-btn,.search-toggle{display:inline-flex}
+  .cat-nav{display:none}
+  .header-inner{gap:8px}
+  .brand{margin-right:auto}
+  .brand-text{font-size:1.15rem}
+
+  /* search becomes a dropdown bar under the header */
+  .search{position:absolute;top:100%;left:0;right:0;max-width:none;margin:0;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow);display:none}
+  .search.open{display:block}
+  .search input{height:46px}
+  .search-icon{left:30px;top:24px}
+  .search-clear{right:22px;top:16px}
+  .search-results{left:16px;right:16px;top:calc(100% - 4px)}
+
+  .hero-slide{grid-template-columns:1fr;padding:40px 28px 64px;min-height:0;text-align:left}
+  .hero-visual{order:-1;margin-bottom:-8px}
+  .hero-device{width:150px;border-radius:28px}
+  .hero-chip{display:none}
+  .hero-nav{display:none}
+
+  .trust-grid{grid-template-columns:repeat(2,1fr)}
+  .cat-grid{grid-template-columns:repeat(3,1fr)}
+  .review-grid{grid-template-columns:1fr 1fr}
+  .offer-banner{grid-template-columns:1fr;padding:36px 28px}
+  .offer-art{height:150px}
+  .offer-art [data-lucide]{width:60px;height:60px}
+  .offer-art [data-lucide]:nth-of-type(2){width:80px;height:80px}
+  .newsletter{grid-template-columns:1fr;padding:34px 28px}
+  .section{padding:44px 0}
+}
+
+@media (max-width:700px){
+  .container{padding:0 16px}
+  .hide-sm{display:none}
