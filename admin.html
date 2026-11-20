@@ -1,0 +1,489 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FarNaz Tech | Admin Dashboard</title>
+<style>
+:root{--bg:#f4f6fb;--dark:#111827;--primary:#635bff;--white:#fff;--muted:#64748b;--border:#e5e7eb}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--dark)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:9px;padding:11px 15px;background:var(--primary);color:white;font-weight:600}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:9px;background:white;margin:6px 0 13px}
+label{font-size:13px;font-weight:700}
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login-card{background:white;padding:28px;border-radius:18px;width:100%;max-width:390px;box-shadow:0 12px 40px #17255412}
+.logo{font-size:25px;font-weight:900;color:var(--primary);margin-bottom:8px}
+.muted{color:var(--muted);font-size:13px}
+#app{display:none}
+.topbar{background:#111827;color:white;padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.topbar strong{font-size:20px}
+.topbar button{background:#374151}
+.layout{display:flex;max-width:1400px;margin:auto;min-height:calc(100vh - 60px)}
+.sidebar{width:220px;background:white;padding:18px;border-right:1px solid var(--border);flex-shrink:0}
+.nav{display:block;width:100%;text-align:left;background:white;color:#334155;margin:5px 0}
+.nav.active,.nav:hover{background:#eeedff;color:var(--primary)}
+main{padding:22px;width:100%;min-width:0}
+.page{display:none}.page.active{display:block}
+h2{margin-top:0}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}
+.stat,.panel{background:white;padding:18px;border-radius:14px;border:1px solid var(--border)}
+.stat span{font-size:13px;color:var(--muted)}
+.stat strong{display:block;font-size:25px;margin-top:10px}
+.panel{margin:15px 0;overflow:hidden}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.full{grid-column:1/-1}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:650px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border);font-size:13px}
+th{background:#f8fafc}
+.action{padding:7px 10px;font-size:12px;margin:2px}
+.danger{background:#dc2626}.green{background:#059669}.gray{background:#475569}
+#message{padding:10px;border-radius:8px;margin:10px 0;display:none;font-size:13px}
+#message.ok{display:block;background:#dcfce7;color:#166534}
+#message.err{display:block;background:#fee2e2;color:#991b1b}
+.badge{padding:5px 8px;border-radius:20px;background:#eef2ff;color:#4338ca;font-size:11px}
+@media(max-width:800px){.layout{display:block}.sidebar{width:100%;display:flex;overflow-x:auto;padding:8px}.nav{width:auto;white-space:nowrap;margin:3px}.cards{grid-template-columns:1fr 1fr}main{padding:13px}}
+@media(max-width:450px){.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.cards{gap:8px}.stat{padding:12px}.stat strong{font-size:20px}}
+</style>
+</head>
+<body>
+
+<div id="login" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">FarNaz Tech</div>
+    <h2>Admin Login</h2>
+    <p class="muted">শুধুমাত্র অনুমোদিত Admin প্রবেশ করতে পারবেন।</p>
+    <div id="loginMessage"></div>
+    <form id="loginForm">
+      <label>Email Address</label>
+      <input id="email" type="email" required placeholder="Admin email">
+      <label>Password</label>
+      <input id="password" type="password" required placeholder="Password">
+      <button id="loginBtn" type="submit" style="width:100%">Login</button>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <header class="topbar">
+    <strong>FarNaz Tech / Admin</strong>
+    <button id="logoutBtn">Logout</button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <button class="nav active" data-page="dashboard">📊 Dashboard</button>
+      <button class="nav" data-page="products">📦 Products</button>
+      <button class="nav" data-page="addProduct">➕ Add Product</button>
+      <button class="nav" data-page="orders">🛒 Orders</button>
+    </aside>
+
+    <main>
+      <div id="message"></div>
+
+      <section id="dashboard" class="page active">
+        <h2>Dashboard Overview</h2>
+        <p class="muted">তোমার অনলাইন দোকানের সারসংক্ষেপ।</p>
+        <div class="cards">
+          <div class="stat"><span>Total Products</span><strong id="totalProducts">0</strong></div>
+          <div class="stat"><span>Total Orders</span><strong id="totalOrders">0</strong></div>
+          <div class="stat"><span>Pending Orders</span><strong id="pendingOrders">0</strong></div>
+          <div class="stat"><span>Total Sales</span><strong id="totalSales">৳0</strong></div>
+        </div>
+        <div class="panel">
+          <h3>Recent Orders</h3>
+          <div class="table-wrap">
+            <table><thead><tr><th>Order No</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody id="recentOrders"><tr><td colspan="4">Loading...</td></tr></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="products" class="page">
+        <h2>All Products</h2>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+              <tbody id="productRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="addProduct" class="page">
+        <h2 id="productFormTitle">Add New Product</h2>
+        <div class="panel">
+          <form id="productForm">
+            <input type="hidden" id="productId">
+            <div class="form-grid">
+              <div><label>Product Name *</label><input id="pName" required placeholder="Dell Laptop"></div>
+              <div><label>Category *</label>
+                <select id="pCategory" required>
+                  <option value="">Select Category</option>
+                  <option>Home</option><option>Laptop</option><option>PC</option>
+                  <option>Battery</option><option>Watch</option><option>Mobile</option>
+                  <option>Accessories</option><option>Other</option>
+                </select>
+              </div>
+              <div><label>Brand</label>
+                <select id="pBrand">
+                  <option value="">Select Brand</option>
+                  <option>Dell</option><option>HP</option><option>Asus</option>
+                  <option>Lenovo</option><option>Acer</option><option>Apple</option>
+                  <option>Samsung</option><option>Other</option>
+                </select>
+              </div>
+              <div><label>Price (৳) *</label><input id="pPrice" type="number" min="0" required></div>
+              <div><label>Discount Price (৳)</label><input id="pDiscount" type="number" min="0" placeholder="Optional"></div>
+              <div><label>Stock Quantity *</label><input id="pStock" type="number" min="0" value="1" required></div>
+              <div class="full"><label>Product Image URL</label><input id="pImage" type="url" placeholder="Cloudinary image URL"></div>
+              <div class="full"><label>Description</label><textarea id="pDescription" rows="4" placeholder="Product details..."></textarea></div>
+            </div>
+            <button id="saveProductBtn" type="submit">Save Product</button>
+            <button type="button" class="gray" id="cancelEdit" style="display:none">Cancel</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="orders" class="page">
+        <h2>Customer Orders</h2>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Order No</th><th>Customer</th><th>Phone</th><th>Total</th><th>Payment</th><th>Status</th><th>Update</th></tr></thead>
+              <tbody id="orderRows"><tr><td colspan="7">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- তোমার নিজের Firebase configuration -->
+<script src="js/firebase-config.js"></script>
+
+<script>
+let auth, db, currentUser = null;
+let productsCache = [];
+let ordersCache = [];
+
+const $ = id => document.getElementById(id);
+
+function showMessage(message, type="ok") {
+  const box = $("message");
+  box.textContent = message;
+  box.className = type;
+  box.style.display = "block";
+  window.scrollTo({top:0,behavior:"smooth"});
+  setTimeout(()=>{box.style.display="none"},5000);
+}
+
+function loginMessage(message) {
+  $("loginMessage").textContent = message;
+  $("loginMessage").style.color = "#dc2626";
+  $("loginMessage").style.margin = "10px 0";
+}
+
+function money(value) {
+  return "৳" + Number(value || 0).toLocaleString("en-US");
+}
+
+function safe(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function dateText(value) {
+  if (!value) return "-";
+  try {
+    const d = value.toDate ? value.toDate() : new Date(value);
+    return d.toLocaleDateString("en-GB");
+  } catch(e) { return "-"; }
+}
+
+function goPage(page) {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav").forEach(b=>b.classList.remove("active"));
+  $(page).classList.add("active");
+  document.querySelector('[data-page="'+page+'"]').classList.add("active");
+}
+
+document.querySelectorAll(".nav").forEach(btn=>{
+  btn.addEventListener("click",()=>goPage(btn.dataset.page));
+});
+
+function getFirebase() {
+  if (!window.firebase || !firebase.apps.length) {
+    throw new Error("Firebase initialize হয়নি। firebase-config.js পরীক্ষা করো।");
+  }
+  auth = firebase.auth();
+  db = firebase.firestore();
+}
+
+async function verifyAdmin(user) {
+  const doc = await db.collection("admins").doc(user.uid).get();
+  return doc.exists && doc.data().active !== false;
+}
+
+$("loginForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  $("loginBtn").disabled = true;
+  $("loginBtn").textContent = "Checking...";
+  try {
+    getFirebase();
+    await auth.signInWithEmailAndPassword($("email").value.trim(),$("password").value);
+    // onAuthStateChanged admin verification handles the next step
+  } catch(error) {
+    loginMessage(error.message);
+  } finally {
+    $("loginBtn").disabled = false;
+    $("loginBtn").textContent = "Login";
+  }
+});
+
+async function enterAdmin(user) {
+  try {
+    const allowed = await verifyAdmin(user);
+    if (!allowed) {
+      await auth.signOut();
+      $("login").style.display = "grid";
+      loginMessage("তোমার অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।");
+      return;
+    }
+    currentUser = user;
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    await loadAll();
+  } catch(error) {
+    console.error(error);
+    await auth.signOut();
+    $("login").style.display = "grid";
+    loginMessage("Admin যাচাই করা যায়নি: " + error.message);
+  }
+}
+
+$("logoutBtn").addEventListener("click",()=>auth.signOut());
+
+function watchAuth() {
+  auth.onAuthStateChanged(user=>{
+    if(user) enterAdmin(user);
+    else {
+      currentUser = null;
+      $("app").style.display = "none";
+      $("login").style.display = "grid";
+    }
+  });
+}
+
+async function loadAll() {
+  await Promise.all([loadProducts(),loadOrders()]);
+  updateStats();
+}
+
+async function loadProducts() {
+  const snap = await db.collection("products").get();
+  productsCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderProducts();
+  $("totalProducts").textContent = productsCache.length;
+}
+
+function renderProducts() {
+  const body = $("productRows");
+  if(!productsCache.length) {
+    body.innerHTML = '<tr><td colspan="5">কোনো Product পাওয়া যায়নি।</td></tr>';
+    return;
+  }
+  body.innerHTML = productsCache.map(p=>`
+    <tr>
+      <td>${safe(p.name)}</td>
+      <td>${safe(p.category)}</td>
+      <td>${money(p.discountPrice || p.price)}</td>
+      <td>${safe(p.stock ?? 0)}</td>
+      <td>
+        <button class="action" onclick="editProduct('${p.id}')">Edit</button>
+        <button class="action danger" onclick="deleteProduct('${p.id}')">Delete</button>
+      </td>
+    </tr>`).join("");
+}
+
+$("productForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const id = $("productId").value;
+  const price = Number($("pPrice").value);
+  const discount = $("pDiscount").value === "" ? null : Number($("pDiscount").value);
+
+  if(discount !== null && discount > price) {
+    showMessage("Discount price মূল দামের চেয়ে বেশি হতে পারবে না।","err");
+    return;
+  }
+
+  const data = {
+    name:$("pName").value.trim(),
+    category:$("pCategory").value,
+    brand:$("pBrand").value,
+    price,
+    discountPrice:discount,
+    stock:Number($("pStock").value),
+    image:$("pImage").value.trim(),
+    description:$("pDescription").value.trim(),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  $("saveProductBtn").disabled = true;
+  try {
+    if(id) {
+      await db.collection("products").doc(id).update(data);
+      showMessage("Product সফলভাবে Update হয়েছে।");
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      data.active = true;
+      await db.collection("products").add(data);
+      showMessage("নতুন Product যোগ হয়েছে।");
+    }
+    resetProductForm();
+    await loadProducts();
+    updateStats();
+    goPage("products");
+  } catch(error) {
+    showMessage("Product save হয়নি: "+error.message,"err");
+  } finally {
+    $("saveProductBtn").disabled = false;
+  }
+});
+
+function editProduct(id) {
+  const p = productsCache.find(x=>x.id===id);
+  if(!p) return;
+  $("productId").value = id;
+  $("pName").value = p.name || "";
+  $("pCategory").value = p.category || "";
+  $("pBrand").value = p.brand || "";
+  $("pPrice").value = p.price ?? "";
+  $("pDiscount").value = p.discountPrice ?? "";
+  $("pStock").value = p.stock ?? 0;
+  $("pImage").value = p.image || "";
+  $("pDescription").value = p.description || "";
+  $("productFormTitle").textContent = "Edit Product";
+  $("saveProductBtn").textContent = "Update Product";
+  $("cancelEdit").style.display = "inline-block";
+  goPage("addProduct");
+}
+
+async function deleteProduct(id) {
+  if(!confirm("এই Product মুছে ফেলতে চাও?")) return;
+  try {
+    await db.collection("products").doc(id).delete();
+    showMessage("Product Delete হয়েছে।");
+    await loadProducts();
+    updateStats();
+  } catch(error) {
+    showMessage("Delete করা যায়নি: "+error.message,"err");
+  }
+}
+
+function resetProductForm() {
+  $("productForm").reset();
+  $("productId").value = "";
+  $("productFormTitle").textContent = "Add New Product";
+  $("saveProductBtn").textContent = "Save Product";
+  $("cancelEdit").style.display = "none";
+}
+
+$("cancelEdit").addEventListener("click",resetProductForm);
+
+async function loadOrders() {
+  const snap = await db.collection("orders").get();
+  ordersCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+  ordersCache.sort((a,b)=>{
+    const aa = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+    const bb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+    return bb-aa;
+  });
+  renderOrders();
+}
+
+function renderOrders() {
+  const body = $("orderRows");
+  const recent = $("recentOrders");
+
+  if(!ordersCache.length) {
+    body.innerHTML = '<tr><td colspan="7">কোনো Order নেই।</td></tr>';
+    recent.innerHTML = '<tr><td colspan="4">কোনো Order নেই।</td></tr>';
+    return;
+  }
+
+  body.innerHTML = ordersCache.map(o=>{
+    const customer = o.customer || {};
+    return `<tr>
+      <td>${safe(o.orderNo || o.id)}</td>
+      <td>${safe(customer.name || "-")}</td>
+      <td>${safe(customer.phone || "-")}</td>
+      <td>${money(o.total)}</td>
+      <td>${safe(o.paymentMethod || "-")}</td>
+      <td><span class="badge">${safe(o.status || "pending")}</span></td>
+      <td>
+        <select id="status-${o.id}">
+          ${["pending","confirmed","processing","shipped","delivered","cancelled"].map(s=>
+            `<option value="${s}" ${o.status===s?"selected":""}>${s}</option>`
+          ).join("")}
+        </select>
+        <button class="action green" onclick="updateOrderStatus('${o.id}')">Save</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  recent.innerHTML = ordersCache.slice(0,5).map(o=>`
+    <tr>
+      <td>${safe(o.orderNo || o.id)}</td>
+      <td>${safe(o.customer?.name || "-")}</td>
+      <td>${money(o.total)}</td>
+      <td><span class="badge">${safe(o.status || "pending")}</span></td>
+    </tr>`).join("");
+}
+
+async function updateOrderStatus(id) {
+  const status = $("status-"+id).value;
+  try {
+    await db.collection("orders").doc(id).update({
+      status,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showMessage("Order status Update হয়েছে।");
+    await loadOrders();
+    updateStats();
+  } catch(error) {
+    showMessage("Status Update হয়নি: "+error.message,"err");
+  }
+}
+
+function updateStats() {
+  $("totalProducts").textContent = productsCache.length;
+  $("totalOrders").textContent = ordersCache.length;
+  $("pendingOrders").textContent = ordersCache.filter(o=>o.status==="pending").length;
+  const sales = ordersCache
+    .filter(o=>o.status==="delivered")
+    .reduce((sum,o)=>sum+Number(o.total || 0),0);
+  $("totalSales").textContent = money(sales);
+}
+
+try {
+  getFirebase();
+  watchAuth();
+} catch(error) {
+  loginMessage(error.message);
+}
+</script>
+</body>
+</html>
