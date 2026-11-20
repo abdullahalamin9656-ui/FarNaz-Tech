@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FarNaz Tech | Admin Dashboard</title>
+
 <style>
 :root{--bg:#f4f6fb;--dark:#111827;--primary:#635bff;--white:#fff;--muted:#64748b;--border:#e5e7eb}
 *{box-sizing:border-box}
@@ -46,10 +47,18 @@ th{background:#f8fafc}
 #message.ok{display:block;background:#dcfce7;color:#166534}
 #message.err{display:block;background:#fee2e2;color:#991b1b}
 .badge{padding:5px 8px;border-radius:20px;background:#eef2ff;color:#4338ca;font-size:11px}
+
+.upload-btn{background:#059669;margin:5px 0 10px}
+#imagePreview{display:none;width:150px;height:150px;object-fit:contain;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:5px;margin:8px 0}
+#uploadStatus{font-size:13px;color:#059669;margin:5px 0}
+.upload-progress{height:8px;background:#e5e7eb;border-radius:20px;overflow:hidden;margin:8px 0;display:none}
+#uploadProgressBar{height:100%;width:0;background:#059669;transition:width .2s}
+
 @media(max-width:800px){.layout{display:block}.sidebar{width:100%;display:flex;overflow-x:auto;padding:8px}.nav{width:auto;white-space:nowrap;margin:3px}.cards{grid-template-columns:1fr 1fr}main{padding:13px}}
 @media(max-width:450px){.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.cards{gap:8px}.stat{padding:12px}.stat strong{font-size:20px}}
 </style>
 </head>
+
 <body>
 
 <div id="login" class="login-wrap">
@@ -58,11 +67,14 @@ th{background:#f8fafc}
     <h2>Admin Login</h2>
     <p class="muted">শুধুমাত্র অনুমোদিত Admin প্রবেশ করতে পারবেন।</p>
     <div id="loginMessage"></div>
+
     <form id="loginForm">
       <label>Email Address</label>
       <input id="email" type="email" required placeholder="Admin email">
+
       <label>Password</label>
       <input id="password" type="password" required placeholder="Password">
+
       <button id="loginBtn" type="submit" style="width:100%">Login</button>
     </form>
   </div>
@@ -88,17 +100,25 @@ th{background:#f8fafc}
       <section id="dashboard" class="page active">
         <h2>Dashboard Overview</h2>
         <p class="muted">তোমার অনলাইন দোকানের সারসংক্ষেপ।</p>
+
         <div class="cards">
           <div class="stat"><span>Total Products</span><strong id="totalProducts">0</strong></div>
           <div class="stat"><span>Total Orders</span><strong id="totalOrders">0</strong></div>
           <div class="stat"><span>Pending Orders</span><strong id="pendingOrders">0</strong></div>
           <div class="stat"><span>Total Sales</span><strong id="totalSales">৳0</strong></div>
         </div>
+
         <div class="panel">
           <h3>Recent Orders</h3>
           <div class="table-wrap">
-            <table><thead><tr><th>Order No</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
-            <tbody id="recentOrders"><tr><td colspan="4">Loading...</td></tr></tbody></table>
+            <table>
+              <thead>
+                <tr><th>Order No</th><th>Customer</th><th>Total</th><th>Status</th></tr>
+              </thead>
+              <tbody id="recentOrders">
+                <tr><td colspan="4">Loading...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -108,8 +128,12 @@ th{background:#f8fafc}
         <div class="panel">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
-              <tbody id="productRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+              <thead>
+                <tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="productRows">
+                <tr><td colspan="5">Loading...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -117,66 +141,158 @@ th{background:#f8fafc}
 
       <section id="addProduct" class="page">
         <h2 id="productFormTitle">Add New Product</h2>
+
         <div class="panel">
           <form id="productForm">
             <input type="hidden" id="productId">
+            <input type="hidden" id="pImagePublicId">
+
             <div class="form-grid">
-              <div><label>Product Name *</label><input id="pName" required placeholder="Dell Laptop"></div>
-              <div><label>Category *</label>
+
+              <div>
+                <label>Product Name *</label>
+                <input id="pName" required placeholder="Dell Laptop">
+              </div>
+
+              <div>
+                <label>Category *</label>
                 <select id="pCategory" required>
                   <option value="">Select Category</option>
-                  <option>Home</option><option>Laptop</option><option>PC</option>
-                  <option>Battery</option><option>Watch</option><option>Mobile</option>
-                  <option>Accessories</option><option>Other</option>
+                  <option>Home</option>
+                  <option>Laptop</option>
+                  <option>PC</option>
+                  <option>Battery</option>
+                  <option>Watch</option>
+                  <option>Mobile</option>
+                  <option>Accessories</option>
+                  <option>Other</option>
                 </select>
               </div>
-              <div><label>Brand</label>
+
+              <div>
+                <label>Brand</label>
                 <select id="pBrand">
                   <option value="">Select Brand</option>
-                  <option>Dell</option><option>HP</option><option>Asus</option>
-                  <option>Lenovo</option><option>Acer</option><option>Apple</option>
-                  <option>Samsung</option><option>Other</option>
+                  <option>Dell</option>
+                  <option>HP</option>
+                  <option>Asus</option>
+                  <option>Lenovo</option>
+                  <option>Acer</option>
+                  <option>Apple</option>
+                  <option>Samsung</option>
+                  <option>Other</option>
                 </select>
               </div>
-              <div><label>Price (৳) *</label><input id="pPrice" type="number" min="0" required></div>
-              <div><label>Discount Price (৳)</label><input id="pDiscount" type="number" min="0" placeholder="Optional"></div>
-              <div><label>Stock Quantity *</label><input id="pStock" type="number" min="0" value="1" required></div>
-              <div class="full"><label>Product Image URL</label><input id="pImage" type="url" placeholder="Cloudinary image URL"></div>
-              <div class="full"><label>Description</label><textarea id="pDescription" rows="4" placeholder="Product details..."></textarea></div>
+
+              <div>
+                <label>Price (৳) *</label>
+                <input id="pPrice" type="number" min="0" required>
+              </div>
+
+              <div>
+                <label>Discount Price (৳)</label>
+                <input id="pDiscount" type="number" min="0" placeholder="Optional">
+              </div>
+
+              <div>
+                <label>Stock Quantity *</label>
+                <input id="pStock" type="number" min="0" value="1" required>
+              </div>
+
+              <!-- CLOUDINARY IMAGE UPLOAD -->
+              <div class="full">
+                <label>Product Image</label>
+
+                <input
+                  id="pImage"
+                  type="url"
+                  placeholder="Uploaded image URL"
+                >
+
+                <button
+                  type="button"
+                  class="upload-btn"
+                  id="uploadImageBtn"
+                >
+                  📸 Upload Product Image
+                </button>
+
+                <input
+                  type="file"
+                  id="imageFile"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                >
+
+                <div class="upload-progress" id="uploadProgress">
+                  <div id="uploadProgressBar"></div>
+                </div>
+
+                <p id="uploadStatus" class="muted">
+                  JPG, PNG অথবা WebP ছবি আপলোড করো। সর্বোচ্চ 10 MB।
+                </p>
+
+                <img id="imagePreview" alt="Product Preview">
+              </div>
+
+              <div class="full">
+                <label>Description</label>
+                <textarea id="pDescription" rows="4" placeholder="Product details..."></textarea>
+              </div>
+
             </div>
+
             <button id="saveProductBtn" type="submit">Save Product</button>
             <button type="button" class="gray" id="cancelEdit" style="display:none">Cancel</button>
+
           </form>
         </div>
       </section>
 
       <section id="orders" class="page">
         <h2>Customer Orders</h2>
+
         <div class="panel">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Order No</th><th>Customer</th><th>Phone</th><th>Total</th><th>Payment</th><th>Status</th><th>Update</th></tr></thead>
-              <tbody id="orderRows"><tr><td colspan="7">Loading...</td></tr></tbody>
+              <thead>
+                <tr>
+                  <th>Order No</th>
+                  <th>Customer</th>
+                  <th>Phone</th>
+                  <th>Total</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                </tr>
+              </thead>
+
+              <tbody id="orderRows">
+                <tr><td colspan="7">Loading...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
       </section>
+
     </main>
   </div>
 </div>
 
-<!-- Firebase SDK -->
+<!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-<!-- তোমার নিজের Firebase configuration -->
+<!-- CONFIG FILES -->
 <script src="js/firebase-config.js"></script>
+<script src="js/cloudinary-config.js"></script>
 
 <script>
 let auth, db, currentUser = null;
 let productsCache = [];
 let ordersCache = [];
+let imageUploading = false;
 
 const $ = id => document.getElementById(id);
 
@@ -205,17 +321,10 @@ function safe(value) {
   })[c]);
 }
 
-function dateText(value) {
-  if (!value) return "-";
-  try {
-    const d = value.toDate ? value.toDate() : new Date(value);
-    return d.toLocaleDateString("en-GB");
-  } catch(e) { return "-"; }
-}
-
 function goPage(page) {
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".nav").forEach(b=>b.classList.remove("active"));
+
   $(page).classList.add("active");
   document.querySelector('[data-page="'+page+'"]').classList.add("active");
 }
@@ -228,6 +337,7 @@ function getFirebase() {
   if (!window.firebase || !firebase.apps.length) {
     throw new Error("Firebase initialize হয়নি। firebase-config.js পরীক্ষা করো।");
   }
+
   auth = firebase.auth();
   db = firebase.firestore();
 }
@@ -239,12 +349,16 @@ async function verifyAdmin(user) {
 
 $("loginForm").addEventListener("submit", async e=>{
   e.preventDefault();
+
   $("loginBtn").disabled = true;
   $("loginBtn").textContent = "Checking...";
+
   try {
     getFirebase();
-    await auth.signInWithEmailAndPassword($("email").value.trim(),$("password").value);
-    // onAuthStateChanged admin verification handles the next step
+    await auth.signInWithEmailAndPassword(
+      $("email").value.trim(),
+      $("password").value
+    );
   } catch(error) {
     loginMessage(error.message);
   } finally {
@@ -256,16 +370,20 @@ $("loginForm").addEventListener("submit", async e=>{
 async function enterAdmin(user) {
   try {
     const allowed = await verifyAdmin(user);
+
     if (!allowed) {
       await auth.signOut();
       $("login").style.display = "grid";
       loginMessage("তোমার অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।");
       return;
     }
+
     currentUser = user;
     $("login").style.display = "none";
     $("app").style.display = "block";
+
     await loadAll();
+
   } catch(error) {
     console.error(error);
     await auth.signOut();
@@ -278,8 +396,9 @@ $("logoutBtn").addEventListener("click",()=>auth.signOut());
 
 function watchAuth() {
   auth.onAuthStateChanged(user=>{
-    if(user) enterAdmin(user);
-    else {
+    if(user) {
+      enterAdmin(user);
+    } else {
       currentUser = null;
       $("app").style.display = "none";
       $("login").style.display = "grid";
@@ -294,17 +413,24 @@ async function loadAll() {
 
 async function loadProducts() {
   const snap = await db.collection("products").get();
-  productsCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  productsCache = snap.docs.map(d=>({
+    id:d.id,
+    ...d.data()
+  }));
+
   renderProducts();
   $("totalProducts").textContent = productsCache.length;
 }
 
 function renderProducts() {
   const body = $("productRows");
+
   if(!productsCache.length) {
     body.innerHTML = '<tr><td colspan="5">কোনো Product পাওয়া যায়নি।</td></tr>';
     return;
   }
+
   body.innerHTML = productsCache.map(p=>`
     <tr>
       <td>${safe(p.name)}</td>
@@ -315,14 +441,96 @@ function renderProducts() {
         <button class="action" onclick="editProduct('${p.id}')">Edit</button>
         <button class="action danger" onclick="deleteProduct('${p.id}')">Delete</button>
       </td>
-    </tr>`).join("");
+    </tr>
+  `).join("");
 }
+
+/* ==========================================
+   CLOUDINARY IMAGE UPLOAD
+========================================== */
+
+$("uploadImageBtn").addEventListener("click",function() {
+  if (imageUploading) return;
+
+  if (!window.FTCloud || typeof window.FTCloud.upload !== "function") {
+    showMessage("Cloudinary config পাওয়া যায়নি। js/cloudinary-config.js পরীক্ষা করো।","err");
+    return;
+  }
+
+  $("imageFile").click();
+});
+
+$("imageFile").addEventListener("change",async function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  imageUploading = true;
+  $("uploadImageBtn").disabled = true;
+  $("saveProductBtn").disabled = true;
+
+  $("uploadProgress").style.display = "block";
+  $("uploadProgressBar").style.width = "0%";
+  $("uploadStatus").textContent = "ছবি আপলোড হচ্ছে...";
+
+  try {
+    const result = await window.FTCloud.upload(file,{
+      tags:"farnaz_products",
+
+      onProgress:function(percent) {
+        $("uploadProgressBar").style.width = percent + "%";
+        $("uploadStatus").textContent = "Uploading: " + percent + "%";
+      }
+    });
+
+    $("pImage").value = result.url;
+    $("pImagePublicId").value = result.publicId;
+
+    $("imagePreview").src = result.url;
+    $("imagePreview").style.display = "block";
+
+    $("uploadStatus").textContent = "✅ ছবি সফলভাবে আপলোড হয়েছে!";
+
+    showMessage("Cloudinary-তে ছবি আপলোড হয়েছে।");
+
+  } catch(error) {
+    console.error(error);
+    $("uploadStatus").textContent = "Upload Error: " + error.message;
+    showMessage("ছবি আপলোড হয়নি: " + error.message,"err");
+
+  } finally {
+    imageUploading = false;
+    $("uploadImageBtn").disabled = false;
+    $("saveProductBtn").disabled = false;
+    $("imageFile").value = "";
+  }
+});
+
+/* হাতে Image URL পরিবর্তন করলে পুরোনো Public ID বাদ */
+$("pImage").addEventListener("input",function() {
+  $("pImagePublicId").value = "";
+  if (!this.value.trim()) {
+    $("imagePreview").style.display = "none";
+  }
+});
+
+/* ==========================================
+   SAVE PRODUCT
+========================================== */
 
 $("productForm").addEventListener("submit",async e=>{
   e.preventDefault();
+
+  if(imageUploading) {
+    showMessage("ছবি আপলোড শেষ হওয়া পর্যন্ত অপেক্ষা করো।","err");
+    return;
+  }
+
   const id = $("productId").value;
   const price = Number($("pPrice").value);
-  const discount = $("pDiscount").value === "" ? null : Number($("pDiscount").value);
+
+  const discount = $("pDiscount").value === ""
+    ? null
+    : Number($("pDiscount").value);
 
   if(discount !== null && discount > price) {
     showMessage("Discount price মূল দামের চেয়ে বেশি হতে পারবে না।","err");
@@ -333,31 +541,38 @@ $("productForm").addEventListener("submit",async e=>{
     name:$("pName").value.trim(),
     category:$("pCategory").value,
     brand:$("pBrand").value,
-    price,
+    price:price,
     discountPrice:discount,
     stock:Number($("pStock").value),
     image:$("pImage").value.trim(),
+    imagePublicId:$("pImagePublicId").value || null,
     description:$("pDescription").value.trim(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   };
 
   $("saveProductBtn").disabled = true;
+
   try {
     if(id) {
       await db.collection("products").doc(id).update(data);
       showMessage("Product সফলভাবে Update হয়েছে।");
+
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       data.active = true;
+
       await db.collection("products").add(data);
       showMessage("নতুন Product যোগ হয়েছে।");
     }
+
     resetProductForm();
     await loadProducts();
     updateStats();
     goPage("products");
+
   } catch(error) {
     showMessage("Product save হয়নি: "+error.message,"err");
+
   } finally {
     $("saveProductBtn").disabled = false;
   }
@@ -366,6 +581,7 @@ $("productForm").addEventListener("submit",async e=>{
 function editProduct(id) {
   const p = productsCache.find(x=>x.id===id);
   if(!p) return;
+
   $("productId").value = id;
   $("pName").value = p.name || "";
   $("pCategory").value = p.category || "";
@@ -374,20 +590,33 @@ function editProduct(id) {
   $("pDiscount").value = p.discountPrice ?? "";
   $("pStock").value = p.stock ?? 0;
   $("pImage").value = p.image || "";
+  $("pImagePublicId").value = p.imagePublicId || "";
   $("pDescription").value = p.description || "";
+
+  if(p.image) {
+    $("imagePreview").src = p.image;
+    $("imagePreview").style.display = "block";
+  } else {
+    $("imagePreview").style.display = "none";
+  }
+
   $("productFormTitle").textContent = "Edit Product";
   $("saveProductBtn").textContent = "Update Product";
   $("cancelEdit").style.display = "inline-block";
+
   goPage("addProduct");
 }
 
 async function deleteProduct(id) {
   if(!confirm("এই Product মুছে ফেলতে চাও?")) return;
+
   try {
     await db.collection("products").doc(id).delete();
+
     showMessage("Product Delete হয়েছে।");
     await loadProducts();
     updateStats();
+
   } catch(error) {
     showMessage("Delete করা যায়নি: "+error.message,"err");
   }
@@ -396,6 +625,16 @@ async function deleteProduct(id) {
 function resetProductForm() {
   $("productForm").reset();
   $("productId").value = "";
+  $("pImagePublicId").value = "";
+
+  $("imagePreview").src = "";
+  $("imagePreview").style.display = "none";
+
+  $("uploadProgress").style.display = "none";
+  $("uploadProgressBar").style.width = "0%";
+
+  $("uploadStatus").textContent = "JPG, PNG অথবা WebP ছবি আপলোড করো। সর্বোচ্চ 10 MB।";
+
   $("productFormTitle").textContent = "Add New Product";
   $("saveProductBtn").textContent = "Save Product";
   $("cancelEdit").style.display = "none";
@@ -403,14 +642,24 @@ function resetProductForm() {
 
 $("cancelEdit").addEventListener("click",resetProductForm);
 
+/* ==========================================
+   ORDERS
+========================================== */
+
 async function loadOrders() {
   const snap = await db.collection("orders").get();
-  ordersCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  ordersCache = snap.docs.map(d=>({
+    id:d.id,
+    ...d.data()
+  }));
+
   ordersCache.sort((a,b)=>{
     const aa = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
     const bb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
     return bb-aa;
   });
+
   renderOrders();
 }
 
@@ -426,6 +675,7 @@ function renderOrders() {
 
   body.innerHTML = ordersCache.map(o=>{
     const customer = o.customer || {};
+
     return `<tr>
       <td>${safe(o.orderNo || o.id)}</td>
       <td>${safe(customer.name || "-")}</td>
@@ -450,19 +700,23 @@ function renderOrders() {
       <td>${safe(o.customer?.name || "-")}</td>
       <td>${money(o.total)}</td>
       <td><span class="badge">${safe(o.status || "pending")}</span></td>
-    </tr>`).join("");
+    </tr>
+  `).join("");
 }
 
 async function updateOrderStatus(id) {
   const status = $("status-"+id).value;
+
   try {
     await db.collection("orders").doc(id).update({
       status,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
+
     showMessage("Order status Update হয়েছে।");
     await loadOrders();
     updateStats();
+
   } catch(error) {
     showMessage("Status Update হয়নি: "+error.message,"err");
   }
@@ -471,19 +725,28 @@ async function updateOrderStatus(id) {
 function updateStats() {
   $("totalProducts").textContent = productsCache.length;
   $("totalOrders").textContent = ordersCache.length;
-  $("pendingOrders").textContent = ordersCache.filter(o=>o.status==="pending").length;
+
+  $("pendingOrders").textContent =
+    ordersCache.filter(o=>o.status==="pending").length;
+
   const sales = ordersCache
     .filter(o=>o.status==="delivered")
     .reduce((sum,o)=>sum+Number(o.total || 0),0);
+
   $("totalSales").textContent = money(sales);
 }
+
+/* START FIREBASE */
 
 try {
   getFirebase();
   watchAuth();
+
 } catch(error) {
   loginMessage(error.message);
+  console.error(error);
 }
 </script>
+
 </body>
 </html>
