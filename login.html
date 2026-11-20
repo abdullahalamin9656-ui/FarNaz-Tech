@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - FarNaz Tech</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f4fa;font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px}
+.box{background:white;width:100%;max-width:420px;padding:28px;border-radius:18px;box-shadow:0 8px 35px #0001}
+h1{text-align:center;color:#1745a5}
+p{text-align:center;color:#777}
+input{width:100%;padding:14px;margin:8px 0 15px;border:1px solid #ddd;border-radius:9px;font-size:15px}
+button{width:100%;padding:14px;background:#2457dc;color:white;border:0;border-radius:9px;font-size:16px;cursor:pointer;margin:6px 0}
+.link{background:none;color:#2457dc}
+#msg{text-align:center;font-size:14px;color:#d22}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>FarNaz Tech</h1>
+<p id="heading">Customer Login</p>
+
+<input id="name" placeholder="Full Name" class="signup" style="display:none">
+<input id="email" type="email" placeholder="Email Address">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="submitAuth()" id="mainBtn">Login</button>
+<button class="link" onclick="toggleMode()" id="switchBtn">Create New Account</button>
+<button class="link" onclick="forgot()">Forgot Password?</button>
+<p id="msg"></p>
+</div>
+
+<script>
+let auth,db,signup=false;
+
+try{
+ if(!window.FT_FIREBASE_CONFIG) throw Error("Firebase config missing");
+ if(!firebase.apps.length) firebase.initializeApp(window.FT_FIREBASE_CONFIG);
+ auth=firebase.auth();
+ db=firebase.firestore();
+
+ auth.onAuthStateChanged(user=>{
+   if(user) location.replace("user-dashboard.html");
+ });
+}catch(e){
+ document.getElementById("msg").textContent=e.message;
+}
+
+function toggleMode(){
+ signup=!signup;
+ document.querySelector(".signup").style.display=signup?"block":"none";
+ document.getElementById("heading").textContent=signup?"Create Account":"Customer Login";
+ document.getElementById("mainBtn").textContent=signup?"Register":"Login";
+ document.getElementById("switchBtn").textContent=signup?"Already have an account? Login":"Create New Account";
+ document.getElementById("msg").textContent="";
+}
+
+async function submitAuth(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ const name=document.getElementById("name").value.trim();
+ const msg=document.getElementById("msg");
+
+ if(!email||!password){msg.textContent="Email and Password দিন";return}
+ if(password.length<6){msg.textContent="Password কমপক্ষে ৬ অক্ষর হতে হবে";return}
+ if(signup&&!name){msg.textContent="আপনার নাম লিখুন";return}
+
+ msg.textContent="Please wait...";
+ try{
+  if(signup){
+   const result=await auth.createUserWithEmailAndPassword(email,password);
+   await result.user.updateProfile({displayName:name});
+   await db.collection("users").doc(result.user.uid).set({
+    name:name,email:email,createdAt:firebase.firestore.FieldValue.serverTimestamp()
+   },{merge:true});
+   location.href="user-dashboard.html";
+  }else{
+   await auth.signInWithEmailAndPassword(email,password);
+   location.href="user-dashboard.html";
+  }
+ }catch(e){
+  msg.textContent=e.message;
+ }
+}
+
+async function forgot(){
+ const email=document.getElementById("email").value.trim();
+ if(!email){alert("আগে Email লিখুন");return}
+ try{
+  await auth.sendPasswordResetEmail(email);
+  alert("Password reset link আপনার Email-এ পাঠানো হয়েছে");
+ }catch(e){alert(e.message)}
+}
+</script>
+</body>
+</html>
