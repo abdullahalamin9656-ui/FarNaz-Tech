@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>FarNaz Tech – Setup tool</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f5f8fd;color:#1b2540;line-height:1.5}
+    .wrap{max-width:640px;margin:0 auto;padding:20px 16px 60px}
+    h1{font-size:1.4rem;margin:8px 0 4px;color:#0a0f1e}
+    h2{font-size:1.05rem;margin:0 0 10px}
+    p{margin:6px 0}
+    .warn{background:#fff7e0;border:1px solid #f3dd9a;color:#7a5200;padding:10px 14px;border-radius:12px;font-size:.9rem}
+    .card{background:#fff;border:1px solid #e6ebf5;border-radius:16px;padding:18px;margin-top:16px;box-shadow:0 2px 8px rgba(15,30,80,.06)}
+    .card.bad{border-color:#f4c2c2;background:#fdeaea;color:#8a1c1c}
+    label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 6px}
+    input{width:100%;height:46px;border:1.5px solid #e6ebf5;border-radius:12px;padding:0 14px;font:inherit}
+    input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+    button{font:inherit;font-weight:700;min-height:48px;border:0;border-radius:12px;padding:0 18px;cursor:pointer;width:100%;margin-top:12px;background:linear-gradient(135deg,#2563eb,#00b4ff);color:#fff}
+    button.ghost{background:#eef5ff;color:#1e40af}
+    button.danger{background:#fdeaea;color:#8a1c1c}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .muted{color:#66708a;font-size:.88rem}
+    code{background:#eef5ff;padding:2px 6px;border-radius:6px;word-break:break-all}
+    pre{background:#0a0f1e;color:#cfe3ff;padding:14px;border-radius:12px;font-size:.82rem;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin-top:16px}
+    ol{padding-left:20px;margin:8px 0}
+  </style>
+  <script src="js/firebase-config.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+</head>
+<body>
+  <main class="wrap">
+    <h1>FarNaz Tech – Setup tool</h1>
+    <p class="warn"><b>Admin only.</b> Use this once to put your categories, brands and settings into Firestore. When you are done, delete <code>seed.html</code> from your GitHub repository.</p>
+
+    <section class="card bad" id="cfgMsg" hidden>
+      <h2>Firebase is not connected yet</h2>
+      <p>Open <code>js/firebase-config.js</code> in your GitHub repository and replace every <code>PASTE_…</code> value with the values from your Firebase project (Project settings → Your apps → Web app). Then reload this page.</p>
+    </section>
+
+    <section class="card" id="loginBox" hidden>
+      <h2>1. Sign in as admin</h2>
+      <form id="loginForm">
+        <label for="email">Admin email</label>
+        <input id="email" type="email" autocomplete="username" required />
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+        <button type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <section class="card bad" id="notAdmin" hidden>
+      <h2>You are signed in, but not an admin yet</h2>
+      <p>Your user ID is:</p>
+      <p><code id="uidText"></code></p>
+      <p>In the Firebase console open <b>Firestore Database → Data → Start collection</b>, name it <code>admins</code>, set <b>Document ID</b> to the user ID above, add a field <code>role</code> = <code>admin</code>, and save. Then press the button below.</p>
+      <button type="button" class="ghost" id="btnRecheck">I added it – check again</button>
+      <button type="button" class="ghost" id="btnOut2">Sign out</button>
+    </section>
+
+    <section class="card" id="adminBox" hidden>
+      <h2>2. Store basics</h2>
+      <p class="muted" id="who"></p>
+      <p class="muted">Adds the 10 categories, 12 brands, 3 homepage banners and your store details. Safe to run again.</p>
+      <label for="sPhone">Contact phone</label>
+      <input id="sPhone" type="tel" placeholder="+880 1XXX-XXXXXX" />
+      <label for="sEmail">Support email</label>
+      <input id="sEmail" type="email" placeholder="support@yourdomain.com" />
+      <label for="sAddress">Store address</label>
+      <input id="sAddress" type="text" placeholder="Dhaka, Bangladesh" />
+      <label for="sDelivery">Delivery charge (৳)</label>
+      <input id="sDelivery" type="number" min="0" inputmode="numeric" value="80" />
+      <button type="button" id="btnBasics">Add categories, brands, banners &amp; settings</button>
+
+      <h2 style="margin-top:26px">3. Demo products (optional)</h2>
+      <p class="muted">Adds 33 sample products and sample reviews so you can test the shop. Your real products are added from the admin dashboard later. You can remove all demo data with one tap.</p>
+      <button type="button" class="ghost" id="btnDemo">Add demo products &amp; reviews</button>
+      <button type="button" class="danger" id="btnRemoveDemo">Remove demo products &amp; reviews</button>
+      <button type="button" class="ghost" id="btnOut">Sign out</button>
+    </section>
+
+    <pre id="log" aria-live="polite"></pre>
+  </main>
+  <script>
+/* ==========================================================
+   FarNaz Tech – PREVIEW DATA (Stage 1-2)
+   ----------------------------------------------------------
+   Sample data so the storefront UI can be tested before
+   Firebase is connected. In Stage 3 every collection below is
+   replaced by live Firestore reads and this file is deleted.
+   Names, prices, specs and reviews here are placeholders.
+   Product "images" arrays are empty on purpose: real photos
+   arrive from Cloudinary in Stage 4 (the pages already render
+   and switch between them when present).
+   ========================================================== */
+window.FT = {
+  currency: "৳",
+
+  settings: {
+    name: "FarNaz Tech",
+    phone: "+880 1XXX-XXXXXX",
+    email: "support@farnaztech.com",
+    address: "Dhaka, Bangladesh",
+    deliveryCharge: 80
+  },
+
+  categories: [
+    { id: "home-electronics", name: "Home Electronics", icon: "tv" },
+    { id: "laptop",           name: "Laptop",           icon: "laptop" },
+    { id: "desktop-pc",       name: "Desktop PC",       icon: "monitor" },
+    { id: "battery",          name: "Battery",          icon: "battery-charging" },
+    { id: "smart-watch",      name: "Smart Watch",      icon: "watch" },
+    { id: "smartphone",       name: "Smartphone",       icon: "smartphone" },
+    { id: "accessories",      name: "Accessories",      icon: "headphones" },
+    { id: "gaming",           name: "Gaming",           icon: "gamepad-2" },
+    { id: "networking",       name: "Networking",       icon: "router" },
+    { id: "other-gadgets",    name: "Other Gadgets",    icon: "plug-zap" }
+  ],
+
+  brands: [
+    { id: "dell", name: "Dell" }, { id: "hp", name: "HP" },
+    { id: "asus", name: "ASUS" }, { id: "lenovo", name: "Lenovo" },
+    { id: "acer", name: "Acer" }, { id: "apple", name: "Apple" },
+    { id: "samsung", name: "Samsung" }, { id: "xiaomi", name: "Xiaomi" },
+    { id: "anker", name: "Anker" }, { id: "logitech", name: "Logitech" },
+    { id: "sony", name: "Sony" }, { id: "baseus", name: "Baseus" }
+  ],
+
+  banners: [
+    {
+      badge: "New season deals", icon: "laptop",
+      title: "Power up with <em>premium laptops</em>",
+      text: "Top-performing laptops from Dell, HP, ASUS and Lenovo with official warranty.",
+      cta: "Shop laptops", link: "products.html?category=laptop",
+      chip1: "Official warranty", chip2: "EMI available"
+    },
+    {
+      badge: "Flagship phones", icon: "smartphone",
+      title: "Your next <em>smartphone</em> is here",
+      text: "Latest Samsung, Apple and Xiaomi phones at honest prices, delivered to your door.",
+      cta: "Shop smartphones", link: "products.html?category=smartphone",
+      chip1: "100% genuine", chip2: "Fast delivery"
+    },
+    {
+      badge: "Level up", icon: "gamepad-2",
+      title: "Gear built for <em>serious gamers</em>",
+      text: "Controllers, headsets, keyboards and more from the brands gamers trust.",
+      cta: "Shop gaming", link: "products.html?category=gaming",
+      chip1: "Top brands", chip2: "Easy returns"
+    }
+  ],
+
+  /* stock = units left. added = days since listed (lower = newer).
+     discount = 0 means no discount price. */
+  products: [
+    { id:"p01", name:"Dell Inspiron 15 Core i5 13th Gen 16GB/512GB", brand:"dell", category:"laptop", price:78000, discount:72500, stock:12, rating:4.6, reviews:128, sold:210, icon:"laptop", flags:["trending","best"], added:20, images:[],
+      desc:"A dependable everyday laptop with a fast 13th Gen processor, 16GB of memory and a quick SSD. Great for study, office work and light creative tasks.",
+      specs:[["Processor","Intel Core i5, 13th Gen"],["Memory","16GB RAM"],["Storage","512GB SSD"],["Display","15.6 inch Full HD"],["Warranty","2 years"]] },
+    { id:"p02", name:"HP Pavilion x360 14 Convertible Touch Laptop", brand:"hp", category:"laptop", price:92000, discount:84900, stock:6, rating:4.5, reviews:76, sold:140, icon:"laptop", flags:["trending","new"], added:3, images:[],
+      desc:"A flexible 2-in-1 that folds into tablet mode. Touchscreen, slim body and strong battery life for work on the move.",
+      specs:[["Processor","Intel Core i5"],["Memory","16GB RAM"],["Storage","512GB SSD"],["Display","14 inch Full HD touchscreen"],["Warranty","2 years"]] },
+    { id:"p03", name:"ASUS TUF Gaming F15 RTX 4050 Laptop", brand:"asus", category:"gaming", price:125000, discount:114000, stock:4, rating:4.8, reviews:94, sold:180, icon:"gamepad-2", flags:["trending","best"], added:12, images:[],
+      desc:"A tough gaming laptop with dedicated RTX graphics and a high refresh rate screen for smooth gameplay.",
+      specs:[["Processor","Intel Core i7"],["Graphics","NVIDIA RTX 4050"],["Memory","16GB RAM"],["Storage","512GB SSD"],["Display","15.6 inch 144Hz"]] },
+    { id:"p04", name:"Lenovo IdeaPad Slim 3 Ryzen 5 8GB/512GB", brand:"lenovo", category:"laptop", price:62000, discount:0, stock:15, rating:4.3, reviews:52, sold:95, icon:"laptop", flags:["new"], added:2, images:[],
+      desc:"A slim, light and affordable laptop for students and professionals who need solid everyday performance.",
+      specs:[["Processor","AMD Ryzen 5"],["Memory","8GB RAM"],["Storage","512GB SSD"],["Display","15.6 inch Full HD"],["Warranty","2 years"]] },
+    { id:"p05", name:"Samsung Galaxy S24 FE 8GB/256GB", brand:"samsung", category:"smartphone", price:89000, discount:79900, stock:20, rating:4.7, reviews:210, sold:320, icon:"smartphone", flags:["trending","best","offer"], added:9, images:[],
+      desc:"A flagship-class phone with a bright AMOLED display, capable camera system and smooth performance.",
+      specs:[["Memory","8GB RAM"],["Storage","256GB"],["Display","6.7 inch AMOLED"],["Camera","Triple rear camera"],["Warranty","1 year official"]] },
+    { id:"p06", name:"Xiaomi Redmi Note 13 Pro 8GB/256GB", brand:"xiaomi", category:"smartphone", price:38000, discount:34500, stock:3, rating:4.4, reviews:143, sold:410, icon:"smartphone", flags:["best","offer"], added:30, images:[],
+      desc:"A popular mid-range phone with a high-resolution camera, fast charging and a large vivid display.",
+      specs:[["Memory","8GB RAM"],["Storage","256GB"],["Display","6.67 inch AMOLED"],["Camera","200MP main camera"],["Warranty","1 year"]] },
+    { id:"p07", name:"Apple iPhone 15 128GB (Official)", brand:"apple", category:"smartphone", price:128000, discount:0, stock:8, rating:4.9, reviews:301, sold:260, icon:"smartphone", flags:["trending","new"], added:5, images:[],
+      desc:"Apple iPhone 15 with a bright Super Retina display, a great camera and USB-C charging.",
+      specs:[["Storage","128GB"],["Display","6.1 inch Super Retina"],["Camera","48MP main camera"],["Connector","USB-C"],["Warranty","1 year official"]] },
+    { id:"p08", name:"Apple Watch SE 2nd Gen 40mm GPS", brand:"apple", category:"smart-watch", price:42000, discount:38900, stock:9, rating:4.6, reviews:64, sold:88, icon:"watch", flags:["offer","new"], added:4, images:[],
+      desc:"Essential Apple Watch features including fitness tracking, notifications and crash detection at a friendly price.",
+      specs:[["Size","40mm"],["Connectivity","GPS"],["Health","Heart-rate and sleep tracking"],["Water resistance","50 metres"],["Warranty","1 year"]] },
+    { id:"p09", name:"Samsung Galaxy Watch6 Classic 43mm", brand:"samsung", category:"smart-watch", price:46000, discount:39900, stock:0, rating:4.5, reviews:41, sold:70, icon:"watch", flags:["offer"], added:25, images:[],
+      desc:"A classic-styled smartwatch with a rotating bezel, health sensors and a bright circular display.",
+      specs:[["Size","43mm"],["Display","1.3 inch Super AMOLED"],["Health","ECG and body composition"],["Battery","Up to 40 hours"],["Warranty","1 year"]] },
+    { id:"p10", name:"Anker PowerCore 20000mAh Power Bank 22.5W", brand:"anker", category:"battery", price:5200, discount:4500, stock:48, rating:4.8, reviews:512, sold:880, icon:"battery-charging", flags:["best","offer","trending"], added:40, images:[],
+      desc:"High-capacity power bank with 22.5W fast charging. Keeps your phone and tablet running for days.",
+      specs:[["Capacity","20000mAh"],["Output","22.5W fast charging"],["Ports","USB-C and USB-A"],["Warranty","18 months"]] },
+    { id:"p11", name:"Baseus 65W GaN Fast Charger (2C+1U)", brand:"baseus", category:"accessories", price:3600, discount:2950, stock:60, rating:4.6, reviews:233, sold:640, icon:"plug-zap", flags:["best","offer"], added:15, images:[],
+      desc:"A compact GaN charger that can power a laptop, phone and earbuds at the same time.",
+      specs:[["Output","65W total"],["Ports","2x USB-C, 1x USB-A"],["Technology","GaN"],["Warranty","12 months"]] },
+    { id:"p12", name:"Logitech MX Master 3S Wireless Mouse", brand:"logitech", category:"accessories", price:13500, discount:11900, stock:14, rating:4.9, reviews:187, sold:300, icon:"mouse-pointer-2", flags:["trending","best"], added:6, images:[],
+      desc:"A premium wireless mouse with quiet clicks, a precise sensor and ergonomic design for all-day comfort.",
+      specs:[["Connectivity","Bluetooth and USB receiver"],["Sensor","8000 DPI"],["Battery","Up to 70 days"],["Warranty","1 year"]] },
+    { id:"p13", name:"Sony WH-1000XM5 Noise Cancelling Headphones", brand:"sony", category:"accessories", price:42000, discount:36500, stock:7, rating:4.8, reviews:152, sold:120, icon:"headphones", flags:["offer","new"], added:1, images:[],
+      desc:"Industry-leading noise cancelling with rich sound and comfortable all-day wear.",
+      specs:[["Type","Over-ear wireless"],["Noise cancelling","Yes, adaptive"],["Battery","Up to 30 hours"],["Warranty","1 year"]] },
+    { id:"p14", name:"Sony 55\" 4K Google TV Bravia", brand:"sony", category:"home-electronics", price:98000, discount:89000, stock:5, rating:4.6, reviews:39, sold:44, icon:"tv", flags:["offer"], added:18, images:[],
+      desc:"A 55 inch 4K smart TV with vivid colour, Google TV and built-in streaming apps.",
+      specs:[["Screen size","55 inch"],["Resolution","4K Ultra HD"],["Smart platform","Google TV"],["Warranty","2 years"]] },
+    { id:"p15", name:"Acer Aspire Desktop Core i5 12th Gen Tower PC", brand:"acer", category:"desktop-pc", price:58000, discount:0, stock:10, rating:4.2, reviews:27, sold:36, icon:"monitor", flags:["new"], added:7, images:[],
+      desc:"A reliable tower PC for home and office with plenty of power for multitasking.",
+      specs:[["Processor","Intel Core i5, 12th Gen"],["Memory","8GB RAM"],["Storage","512GB SSD"],["Warranty","2 years"]] },
+    { id:"p16", name:"Xiaomi AX3000 Wi-Fi 6 Dual-Band Router", brand:"xiaomi", category:"networking", price:6800, discount:5900, stock:25, rating:4.5, reviews:98, sold:150, icon:"router", flags:["trending","best"], added:11, images:[],
+      desc:"A fast Wi-Fi 6 router that covers the whole home with stable dual-band speeds.",
+      specs:[["Standard","Wi-Fi 6 (AX3000)"],["Bands","Dual-band"],["Ports","Gigabit Ethernet"],["Warranty","1 year"]] },
+    { id:"p17", name:"Acer Nitro 5 Core i5 RTX 3050 Gaming Laptop", brand:"acer", category:"gaming", price:104000, discount:96500, stock:7, rating:4.5, reviews:58, sold:75, icon:"gamepad-2", flags:["trending"], added:14, images:[],
+      desc:"A powerful gaming laptop with RTX graphics and a fast display, ready for modern games.",
+      specs:[["Processor","Intel Core i5"],["Graphics","NVIDIA RTX 3050"],["Memory","16GB RAM"],["Display","15.6 inch 144Hz"]] },
+    { id:"p18", name:"Logitech G502 X Wired Gaming Mouse", brand:"logitech", category:"gaming", price:9800, discount:8500, stock:22, rating:4.7, reviews:119, sold:210, icon:"mouse-pointer-2", flags:["best","offer"], added:22, images:[],
+      desc:"A precise wired gaming mouse with programmable buttons and a high-accuracy sensor.",
+      specs:[["Connectivity","Wired USB"],["Sensor","25600 DPI"],["Buttons","13 programmable"],["Warranty","2 years"]] },
+    { id:"p19", name:"Sony DualSense Wireless Controller", brand:"sony", category:"gaming", price:11500, discount:0, stock:16, rating:4.8, reviews:166, sold:190, icon:"gamepad-2", flags:["best","new"], added:8, images:[],
+      desc:"Immersive haptic feedback and adaptive triggers for a more real gaming experience.",
+      specs:[["Connectivity","Bluetooth and USB-C"],["Features","Haptic feedback, adaptive triggers"],["Warranty","1 year"]] },
+    { id:"p20", name:"Lenovo ThinkCentre Neo 50s Tower Core i5", brand:"lenovo", category:"desktop-pc", price:64000, discount:59500, stock:9, rating:4.4, reviews:21, sold:30, icon:"monitor", flags:["offer"], added:16, images:[],
+      desc:"A business-ready desktop with dependable performance and easy upgrade options.",
+      specs:[["Processor","Intel Core i5"],["Memory","8GB RAM"],["Storage","512GB SSD"],["Warranty","3 years"]] },
+    { id:"p21", name:"Dell OptiPlex Micro Core i3 Mini PC", brand:"dell", category:"desktop-pc", price:48000, discount:0, stock:11, rating:4.3, reviews:18, sold:26, icon:"monitor", flags:["new"], added:10, images:[],
+      desc:"A tiny desktop that fits anywhere on the desk without giving up everyday speed.",
+      specs:[["Processor","Intel Core i3"],["Memory","8GB RAM"],["Storage","256GB SSD"],["Warranty","3 years"]] },
+    { id:"p22", name:"HP ProDesk 400 G9 Core i5 Desktop", brand:"hp", category:"desktop-pc", price:69000, discount:64500, stock:6, rating:4.5, reviews:24, sold:33, icon:"monitor", flags:["offer"], added:19, images:[],
+      desc:"A secure, dependable desktop built for busy offices and growing businesses.",
+      specs:[["Processor","Intel Core i5"],["Memory","16GB RAM"],["Storage","512GB SSD"],["Warranty","3 years"]] },
+    { id:"p23", name:"Anker Soundcore Q30 Wireless Headphones", brand:"anker", category:"accessories", price:8500, discount:7200, stock:30, rating:4.6, reviews:204, sold:260, icon:"headphones", flags:["best","offer"], added:27, images:[],
+      desc:"Hybrid active noise cancelling headphones with long battery life at a great price.",
+      specs:[["Type","Over-ear wireless"],["Noise cancelling","Hybrid ANC"],["Battery","Up to 40 hours"],["Warranty","18 months"]] },
+    { id:"p24", name:"Baseus 20000mAh 65W Laptop Power Bank", brand:"baseus", category:"battery", price:9800, discount:8600, stock:18, rating:4.5, reviews:87, sold:120, icon:"battery-charging", flags:["trending"], added:13, images:[],
+      desc:"A power bank strong enough to charge laptops as well as phones and tablets.",
+      specs:[["Capacity","20000mAh"],["Output","65W"],["Ports","USB-C and USB-A"],["Warranty","12 months"]] },
+    { id:"p25", name:"Xiaomi Smart Band 8 Fitness Tracker", brand:"xiaomi", category:"smart-watch", price:4800, discount:4200, stock:40, rating:4.5, reviews:312, sold:520, icon:"watch", flags:["best","offer"], added:35, images:[],
+      desc:"A light fitness band with a bright display, sleep tracking and many sport modes.",
+      specs:[["Display","1.62 inch AMOLED"],["Battery","Up to 16 days"],["Sport modes","150+"],["Warranty","1 year"]] },
+    { id:"p26", name:"Samsung 32\" M7 Smart Monitor 4K", brand:"samsung", category:"home-electronics", price:52000, discount:47500, stock:8, rating:4.6, reviews:33, sold:41, icon:"tv", flags:["offer","new"], added:6, images:[],
+      desc:"A 4K monitor with smart TV features, so you can work, stream and watch in one screen.",
+      specs:[["Screen size","32 inch"],["Resolution","4K Ultra HD"],["Smart apps","Built in"],["Warranty","2 years"]] },
+    { id:"p27", name:"Xiaomi Robot Vacuum E10", brand:"xiaomi", category:"other-gadgets", price:24000, discount:21500, stock:10, rating:4.4, reviews:46, sold:60, icon:"bot", flags:["offer"], added:21, images:[],
+      desc:"A smart robot vacuum that cleans your floors on a schedule you set from your phone.",
+      specs:[["Control","Mobile app"],["Cleaning","Vacuum and mop"],["Warranty","1 year"]] },
+    { id:"p28", name:"Baseus Magnetic Wireless Charging Car Mount", brand:"baseus", category:"other-gadgets", price:3200, discount:2700, stock:35, rating:4.4, reviews:92, sold:140, icon:"car", flags:["best"], added:28, images:[],
+      desc:"A magnetic car phone holder that also charges your phone wirelessly.",
+      specs:[["Charging","Wireless"],["Mount","Magnetic"],["Warranty","12 months"]] },
+    { id:"p29", name:"Anker eufy Indoor Security Camera 2K", brand:"anker", category:"other-gadgets", price:6500, discount:0, stock:20, rating:4.5, reviews:71, sold:95, icon:"camera", flags:["new"], added:9, images:[],
+      desc:"A 2K indoor camera with night vision and motion alerts for peace of mind at home.",
+      specs:[["Resolution","2K"],["Night vision","Yes"],["Alerts","Motion detection"],["Warranty","18 months"]] },
+    { id:"p30", name:"Samsung Galaxy Tab A9+ 4GB/64GB", brand:"samsung", category:"other-gadgets", price:29000, discount:26500, stock:13, rating:4.3, reviews:55, sold:80, icon:"tablet", flags:["trending","offer"], added:17, images:[],
+      desc:"A smooth, family-friendly tablet with a large screen for study, video and games.",
+      specs:[["Display","11 inch"],["Memory","4GB RAM"],["Storage","64GB"],["Warranty","1 year"]] },
+    { id:"p31", name:"Apple MacBook Air 13 M2 8GB/256GB", brand:"apple", category:"laptop", price:158000, discount:146000, stock:5, rating:4.9, reviews:88, sold:70, icon:"laptop", flags:["trending","new"], added:4, images:[],
+      desc:"Thin, silent and fast. The Apple M2 chip gives all-day battery life and excellent performance.",
+      specs:[["Chip","Apple M2"],["Memory","8GB unified"],["Storage","256GB SSD"],["Display","13.6 inch Liquid Retina"],["Warranty","1 year"]] },
+    { id:"p32", name:"Apple AirPods Pro 2nd Gen (USB-C)", brand:"apple", category:"accessories", price:32000, discount:29500, stock:12, rating:4.8, reviews:176, sold:150, icon:"headphones", flags:["trending","offer"], added:12, images:[],
+      desc:"Active noise cancellation, transparency mode and rich sound in a pocket-sized case.",
+      specs:[["Type","In-ear wireless"],["Noise cancelling","Active"],["Charging","USB-C"],["Warranty","1 year"]] },
+    { id:"p33", name:"ASUS RT-AX55 Wi-Fi 6 Router", brand:"asus", category:"networking", price:7600, discount:6900, stock:17, rating:4.4, reviews:49, sold:66, icon:"router", flags:["offer"], added:23, images:[],
+      desc:"A dependable Wi-Fi 6 router for streaming, calls and gaming at home.",
+      specs:[["Standard","Wi-Fi 6 (AX1800)"],["Bands","Dual-band"],["Ports","Gigabit Ethernet"],["Warranty","3 years"]] }
+  ],
+
+  /* Sample product reviews for layout preview only – not real customers. */
+  productReviews: [
+    { productId:"p01", name:"Imran Hossain", rating:5, date:"2026-10-12", text:"Fast, quiet and the screen is great for the price. Delivery was quick too." },
+    { productId:"p01", name:"Nusrat Jahan", rating:4, date:"2026-09-28", text:"Very good for office work. Battery could be better but overall happy." },
+    { productId:"p05", name:"Arif Chowdhury", rating:5, date:"2026-10-20", text:"Camera and display are excellent. Original phone with official warranty." },
+    { productId:"p10", name:"Shakib Rahman", rating:5, date:"2026-10-02", text:"Charges my phone four times. Solid build and quite compact." },
+    { productId:"p12", name:"Tasnim Akter", rating:5, date:"2026-11-01", text:"Best mouse I have used. Silent clicks and very comfortable." }
+  ],
+
+  /* Sample testimonials for layout preview only – not real customers. */
+  reviews: [
+    { name:"Rahim Uddin", place:"Dhaka", rating:5, text:"Ordered a laptop on Monday and it arrived by Wednesday, perfectly packed. The warranty card was genuine too. Very happy." },
+    { name:"Sumaiya Akter", place:"Chattogram", rating:5, text:"Great prices and the support team actually picked up my call and helped me choose the right phone. Will buy again." },
+    { name:"Tanvir Hasan", place:"Sylhet", rating:4, text:"Smooth checkout and cash on delivery made it easy to trust. The power bank works exactly as described." }
+  ]
+};
+
+/* ==========================================================
+   FarNaz Tech – Firestore data layer
+   Loads categories, brands, products, banners, settings and
+   approved reviews from Firestore into window.FT (the same
+   shape the storefront already renders), so pages need no
+   changes to show live data.
+
+   Modes (FTDB.status()):
+     "preview" – js/firebase-config.js not filled in yet; the
+                 sample data from sample-data.js is shown.
+     "live"    – data came from Firestore (or a fresh cache).
+     "error"   – Firestore could not be read. Nothing fake is
+                 shown; the page displays a notice instead.
+   ========================================================== */
+(function () {
+  "use strict";
+
+  var D = window.FT;
+  var CACHE_KEY = "ft_data_v1";
+  var TTL = 2 * 60 * 1000;           // admin changes reach shoppers within ~2 minutes
+  var status = "preview", errorMsg = "", loadPromise = null, dbInstance = null;
+
+  /* ---------- config ---------- */
+  function configured() {
+    var c = window.FT_FIREBASE_CONFIG;
+    return !!(c && c.apiKey && c.projectId &&
+      String(c.apiKey).indexOf("PASTE") === -1 && String(c.projectId).indexOf("PASTE") === -1);
+  }
+
+  function getDb() {
+    if (dbInstance) return dbInstance;
+    if (typeof firebase === "undefined") throw new Error("Firebase SDK did not load");
+    if (!firebase.apps.length) firebase.initializeApp(window.FT_FIREBASE_CONFIG);
+    dbInstance = firebase.firestore();
+    return dbInstance;
+  }
+
+  /* ---------- safe mapping helpers ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  // Admin-typed banner titles are plain text; *word* becomes <em>word</em>. Nothing else is allowed through.
+  function safeTitle(t) { return esc(t).replace(/\*(.+?)\*/g, "<em>$1</em>"); }
+  function safeLink(l) {
+    l = String(l || "");
+    return /^(products\.html|product\.html|index\.html|https:\/\/)/.test(l) ? l : "products.html";
+  }
+  function httpsOnly(u) { return typeof u === "string" && /^https:\/\//.test(u) ? u : ""; }
+  function num(v, d) { v = Number(v); return isFinite(v) ? v : d; }
+  function millis(ts) {
+    if (!ts) return null;
+    if (typeof ts.toMillis === "function") return ts.toMillis();
+    if (typeof ts.seconds === "number") return ts.seconds * 1000;
+    return null;
+  }
+  function daysSince(ts) {
+    var ms = millis(ts);
+    return ms === null ? 999 : Math.max(0, Math.floor((Date.now() - ms) / 864e5));
+  }
+  function dateStr(ts) {
+    var ms = millis(ts);
+    return ms === null ? "" : new Date(ms).toISOString().slice(0, 10);
+  }
+
+  function mapCategory(id, d) {
+    return { id: id, name: String(d.name || id), icon: String(d.icon || "package"), imageUrl: httpsOnly(d.imageUrl), visible: d.visible !== false, order: num(d.order, 999) };
+  }
+  function mapBrand(id, d) {
+    return { id: id, name: String(d.name || id), logoUrl: httpsOnly(d.logoUrl), categoryIds: Array.isArray(d.categoryIds) ? d.categoryIds.map(String) : [] };
+  }
+  function mapProduct(id, d) {
+    var flags = [];
+    if (d.trending || d.featured) flags.push("trending");
+    if (d.bestSelling) flags.push("best");
+    if (d.isNew) flags.push("new");
+    return {
+      id: id,
+      name: String(d.name || "Untitled product"),
+      brand: String(d.brandId || ""),
+      category: String(d.categoryId || ""),
+      price: num(d.price, 0),
+      discount: num(d.discountPrice, 0),
+      stock: Math.max(0, Math.floor(num(d.stock, 0))),
+      rating: num(d.rating, 0),
+      reviews: Math.max(0, Math.floor(num(d.reviewCount, 0))),
+      sold: num(d.sold, 0),
+      icon: String(d.icon || "package"),
+      flags: flags,
+      added: daysSince(d.createdAt),
+      images: (Array.isArray(d.images) ? d.images : []).map(httpsOnly).filter(Boolean),
+      desc: String(d.description || ""),
+      specs: (Array.isArray(d.specs) ? d.specs : []).map(function (s) { return [String((s && s.label) || ""), String((s && s.value) || "")]; })
+    };
+  }
+  function mapBanner(id, d) {
+    return {
+      id: id, order: num(d.order, 999),
+      badge: String(d.badge || ""), title: safeTitle(d.title || ""), text: String(d.text || ""),
+      cta: String(d.cta || "Shop now"), link: safeLink(d.link), icon: String(d.icon || "sparkles"),
+      chip1: String(d.chip1 || ""), chip2: String(d.chip2 || ""), image: httpsOnly(d.imageUrl)
+    };
+  }
+  function mapReview(id, d) {
+    return {
+      id: id, productId: String(d.productId || ""), name: String(d.userName || "Customer"),
+      place: String(d.place || ""), rating: Math.min(5, Math.max(0, num(d.rating, 0))),
+      text: String(d.text || ""), date: dateStr(d.createdAt), featured: d.featured === true
+    };
+  }
+
+  /* ---------- reading ---------- */
+  function rows(snap, fn) {
+    var out = [];
+    snap.forEach(function (doc) { out.push(fn(doc.id, doc.data() || {})); });
+    return out;
+  }
+
+  function fetchAll(db) {
+    return Promise.all([
+      db.collection("categories").get(),
+      db.collection("brands").get(),
+      db.collection("products").where("active", "==", true).limit(500).get(),
+      db.collection("banners").where("enabled", "==", true).get(),
+      db.collection("settings").doc("store").get(),
+      db.collection("reviews").where("approved", "==", true).limit(100).get()
+    ]).then(function (r) {
+      var reviews = rows(r[5], mapReview);
+      return {
+        categories: rows(r[0], mapCategory).filter(function (c) { return c.visible; })
+          .sort(function (a, b) { return a.order - b.order || a.name.localeCompare(b.name); }),
+        brands: rows(r[1], mapBrand).sort(function (a, b) { return a.name.localeCompare(b.name); }),
+        products: rows(r[2], mapProduct),
+        banners: rows(r[3], mapBanner).sort(function (a, b) { return a.order - b.order; }),
+        settings: r[4] && r[4].exists ? r[4].data() : {},
+        productReviews: reviews.filter(function (x) { return x.productId; }),
+        reviews: reviews.filter(function (x) { return x.featured; })
+      };
+    });
+  }
+
+  /* ---------- applying (mutates the shared window.FT in place) ---------- */
+  function applySettings(s) {
+    var base = D.settings || {};
+    D.settings = {
+      name: String(s.name || base.name || "FarNaz Tech"),
+      phone: String(s.phone || base.phone || ""),
+      whatsapp: String(s.whatsapp || ""),
+      email: String(s.email || base.email || ""),
+      address: String(s.address || base.address || ""),
+      deliveryCharge: num(s.deliveryCharge, num(base.deliveryCharge, 0)),
+      social: {
+        facebook: httpsOnly(s.social && s.social.facebook), instagram: httpsOnly(s.social && s.social.instagram),
+        youtube: httpsOnly(s.social && s.social.youtube), twitter: httpsOnly(s.social && s.social.twitter)
+      }
+    };
+  }
+  function apply(data) {
+    D.categories = data.categories;
+    D.brands = data.brands;
+    D.products = data.products;
+    D.banners = data.banners;
+    D.productReviews = data.productReviews;
+    D.reviews = data.reviews;
+    applySettings(data.settings || {});
+  }
+  function empty() {
+    return { categories: [], brands: [], products: [], banners: [], settings: {}, productReviews: [], reviews: [] };
+  }
+
+  /* ---------- short-lived cache (fewer Firestore reads, faster pages) ---------- */
+  function readCache() {
+    try {
+      var raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      var c = JSON.parse(raw);
+      return c && c.t && Date.now() - c.t < TTL && c.data ? c.data : null;
+    } catch (e) { return null; }
+  }
+  function writeCache(data) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data: data })); } catch (e) { /* ignore */ } }
+  function clearCache() { try { sessionStorage.removeItem(CACHE_KEY); } catch (e) { /* ignore */ } }
+
+  /* ---------- public API ---------- */
+  function load() {
+    if (loadPromise) return loadPromise;
+    loadPromise = new Promise(function (resolve) {
+      if (!configured()) { status = "preview"; resolve(status); return; }
+      if (!/[?&]nocache=1/.test(location.search)) {
+        var cached = readCache();
+        if (cached) { apply(cached); status = "live"; resolve(status); return; }
+      }
+      var db;
+      try { db = getDb(); } catch (e) {
+        status = "error"; errorMsg = e.message || "init-failed"; apply(empty()); resolve(status); return;
+      }
+      fetchAll(db).then(function (data) {
+        apply(data); writeCache(data); status = "live"; resolve(status);
+      }).catch(function (e) {
+        status = "error"; errorMsg = (e && e.code) || String(e);
+        apply(empty()); resolve(status);
+      });
+    });
+    return loadPromise;
+  }
+
+  window.FTDB = {
+    load: load,
+    configured: configured,
+    db: getDb,
+    clearCache: clearCache,
+    status: function () { return status; },
+    error: function () { return errorMsg; }
+  };
+})();
+
+/* ==========================================================
+   FarNaz Tech – one-time setup / seeding tool (seed.html)
+   Writes with the signed-in admin's own account, so Firestore
+   Security Rules (admins/{uid}) decide whether a write is
+   allowed. Nothing here bypasses security.
+   ========================================================== */
+(function () {
+  "use strict";
+
+  var S = window.FT;                       // sample data used as the starting content
+  function $(s) { return document.querySelector(s); }
+  function log(msg, bad) {
+    var el = $("#log");
+    el.textContent += (bad ? "✖ " : "• ") + msg + "\n";
+    el.scrollTop = el.scrollHeight;
+  }
+  function show(id, on) { $(id).hidden = !on; }
+  function busy(on) {
+    ["#btnBasics", "#btnDemo", "#btnRemoveDemo"].forEach(function (id) { $(id).disabled = on; });
+  }
+
+  var db, auth;
+
+  /* ---------- batched writes (Firestore allows 500 per batch) ---------- */
+  function commit(ops) {
+    var chunks = [];
+    for (var i = 0; i < ops.length; i += 400) chunks.push(ops.slice(i, i + 400));
+    return chunks.reduce(function (p, chunk) {
+      return p.then(function () {
+        var b = db.batch();
+        chunk.forEach(function (o) {
+          if (o.del) b.delete(o.ref);
+          else b.set(o.ref, o.data, { merge: !!o.merge });
+        });
+        return b.commit();
+      });
+    }, Promise.resolve());
+  }
+  function ts(ms) { return firebase.firestore.Timestamp.fromMillis(ms); }
+
+  /* ---------- 2. store basics ---------- */
+  function basicsOps() {
+    var ops = [];
+
+    // brand -> categories it sells in (from the sample catalogue)
+    var brandCats = {};
+    S.products.forEach(function (p) {
+      (brandCats[p.brand] = brandCats[p.brand] || []);
+      if (brandCats[p.brand].indexOf(p.category) === -1) brandCats[p.brand].push(p.category);
+    });
+
+    S.categories.forEach(function (c, i) {
+      ops.push({ ref: db.collection("categories").doc(c.id), merge: true,
+        data: { name: c.name, icon: c.icon, imageUrl: "", visible: true, order: i + 1 } });
+    });
+    S.brands.forEach(function (b) {
+      ops.push({ ref: db.collection("brands").doc(b.id), merge: true,
+        data: { name: b.name, logoUrl: "", categoryIds: brandCats[b.id] || [] } });
+    });
+    S.banners.forEach(function (b, i) {
+      ops.push({ ref: db.collection("banners").doc("banner-" + (i + 1)), merge: true,
+        data: {
+          badge: b.badge, title: b.title.replace(/<em>(.*?)<\/em>/g, "*$1*"), text: b.text,
+          cta: b.cta, link: b.link, icon: b.icon, chip1: b.chip1, chip2: b.chip2,
+          imageUrl: "", enabled: true, order: i + 1
+        } });
+    });
+
+    var delivery = parseFloat($("#sDelivery").value);
+    ops.push({ ref: db.collection("settings").doc("store"), merge: true,
+      data: {
+        name: "FarNaz Tech",
+        phone: $("#sPhone").value.trim(),
+        whatsapp: "",
+        email: $("#sEmail").value.trim(),
+        address: $("#sAddress").value.trim(),
+        deliveryCharge: delivery >= 0 ? delivery : 0,
+        social: { facebook: "", instagram: "", youtube: "", twitter: "" }
+      } });
+    return ops;
+  }
+
+  /* ---------- 3. demo products & reviews ---------- */
+  function demoReviewId(kind, i) { return "seed-" + kind + "-" + (i + 1); }
+
+  function demoOps() {
+    var ops = [], now = Date.now();
+    S.products.forEach(function (p) {
+      ops.push({ ref: db.collection("products").doc(p.id), data: {
+        name: p.name, brandId: p.brand, categoryId: p.category,
+        price: p.price, discountPrice: p.discount || 0, stock: p.stock,
+        rating: p.rating, reviewCount: p.reviews, sold: p.sold, icon: p.icon,
+        images: [], description: p.desc,
+        specs: p.specs.map(function (s) { return { label: s[0], value: s[1] }; }),
+        featured: false,
+        trending: p.flags.indexOf("trending") !== -1,
+        bestSelling: p.flags.indexOf("best") !== -1,
+        isNew: p.flags.indexOf("new") !== -1,
+        active: true,
+        createdAt: ts(now - p.added * 864e5)
+      } });
+    });
+    S.productReviews.forEach(function (r, i) {
+      ops.push({ ref: db.collection("reviews").doc(demoReviewId("pr", i)), data: {
+        productId: r.productId, userId: "seed", userName: r.name, rating: r.rating, text: r.text,
+        approved: true, featured: false, createdAt: ts(new Date(r.date).getTime() || now)
+      } });
+    });
+    S.reviews.forEach(function (r, i) {
+      ops.push({ ref: db.collection("reviews").doc(demoReviewId("t", i)), data: {
+        productId: "", userId: "seed", userName: r.name, place: r.place, rating: r.rating, text: r.text,
+        approved: true, featured: true, createdAt: ts(now)
+      } });
+    });
+    return ops;
+  }
+  function removeDemoOps() {
+    var ops = [];
+    S.products.forEach(function (p) { ops.push({ del: true, ref: db.collection("products").doc(p.id) }); });
+    S.productReviews.forEach(function (r, i) { ops.push({ del: true, ref: db.collection("reviews").doc(demoReviewId("pr", i)) }); });
+    S.reviews.forEach(function (r, i) { ops.push({ del: true, ref: db.collection("reviews").doc(demoReviewId("t", i)) }); });
+    return ops;
+  }
+
+  function run(label, makeOps) {
+    busy(true);
+    log(label + " …");
+    commit(makeOps()).then(function () {
+      window.FTDB.clearCache();
+      log(label + " – done.");
+    }).catch(function (e) {
+      log(label + " failed: " + ((e && e.code) || e) + (e && e.code === "permission-denied" ? " (are the Firestore rules published and is admins/<your uid> created?)" : ""), true);
+    }).then(function () { busy(false); });
+  }
+
+  /* ---------- admin check & screens ---------- */
+  function checkAdmin(user) {
+    show("#loginBox", false); show("#notAdmin", false); show("#adminBox", false);
+    db.collection("admins").doc(user.uid).get().then(function (snap) {
+      if (snap.exists) {
+        $("#who").textContent = "Signed in as " + (user.email || user.uid);
+        show("#adminBox", true);
+        log("Admin verified.");
+      } else {
+        $("#uidText").textContent = user.uid;
+        show("#notAdmin", true);
+      }
+    }).catch(function (e) {
+      $("#uidText").textContent = user.uid;
+      show("#notAdmin", true);
+      log("Could not verify admin: " + ((e && e.code) || e), true);
+    });
+  }
+
+  function boot() {
+    if (!window.FTDB || !window.FTDB.configured()) { show("#cfgMsg", true); return; }
+    try {
+      db = window.FTDB.db();
+      if (typeof firebase.auth !== "function") throw new Error("Firebase Auth SDK did not load");
+      auth = firebase.auth();
+    } catch (e) { show("#cfgMsg", true); log(e.message, true); return; }
+
+    $("#loginForm").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      auth.signInWithEmailAndPassword($("#email").value.trim(), $("#password").value)
+        .catch(function (e) { log("Sign-in failed: " + ((e && e.code) || e), true); });
+    });
+    function out() { auth.signOut(); }
+    $("#btnOut").addEventListener("click", out);
+    $("#btnOut2").addEventListener("click", out);
+    $("#btnRecheck").addEventListener("click", function () { if (auth.currentUser) checkAdmin(auth.currentUser); });
+
+    $("#btnBasics").addEventListener("click", function () { run("Adding categories, brands, banners and settings", basicsOps); });
+    $("#btnDemo").addEventListener("click", function () { run("Adding demo products and reviews", demoOps); });
+    $("#btnRemoveDemo").addEventListener("click", function () {
+      if (window.confirm("Remove all demo products and demo reviews? Products you added yourself are not touched.")) run("Removing demo products and reviews", removeDemoOps);
+    });
+
+    auth.onAuthStateChanged(function (user) {
+      if (user) checkAdmin(user);
+      else { show("#adminBox", false); show("#notAdmin", false); show("#loginBox", true); }
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+
+  </script>
+
+</body>
+</html>
