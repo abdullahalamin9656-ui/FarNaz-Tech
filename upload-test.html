@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>FarNaz Tech – Upload test</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f5f8fd;color:#1b2540}
+    main{max-width:640px;margin:0 auto;padding:18px}
+    h1{font-size:1.3rem;margin:0 0 10px}
+    .note{background:#fff7dd;border:1px solid #f1dc9a;border-radius:12px;padding:12px;font-size:.9rem;margin-bottom:14px}
+    .card{background:#fff;border:1px solid #e6ebf5;border-radius:16px;padding:16px;margin-bottom:14px}
+    input[type=file]{width:100%;padding:10px;border:1px dashed #9db4e8;border-radius:12px;background:#f8faff}
+    button{width:100%;margin-top:12px;padding:14px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-size:1rem;font-weight:600}
+    button:disabled{opacity:.5}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px}
+    .item{border:1px solid #e6ebf5;border-radius:12px;overflow:hidden;background:#fff}
+    .item img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#f1f5fb;display:block}
+    .bar{height:6px;background:#e6ebf5}
+    .bar i{display:block;height:100%;width:0;background:#16a34a;transition:width .2s}
+    .st{font-size:.75rem;padding:6px;word-break:break-word}
+    .ok{color:#16a34a}.bad{color:#dc2626}
+    pre{white-space:pre-wrap;word-break:break-all;font-size:.75rem;background:#0a0f1e;color:#cfe3ff;padding:12px;border-radius:12px;margin:0}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Cloudinary upload test</h1>
+  <div class="note"><b>Test page only.</b> Verify uploads work, then delete <code>upload-test.html</code> from your repository.</div>
+
+  <div class="card">
+    <input id="pick" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+    <div class="grid" id="grid"></div>
+    <button id="go" type="button" disabled>Upload selected images</button>
+  </div>
+
+  <div class="card">
+    <b>Result (this is what gets saved in Firestore)</b>
+    <pre id="out">Nothing uploaded yet.</pre>
+  </div>
+</main>
+
+<script src="js/cloudinary-config.js"></script>
+<script>
+(function () {
+  "use strict";
+  var pick = document.getElementById("pick");
+  var grid = document.getElementById("grid");
+  var go = document.getElementById("go");
+  var out = document.getElementById("out");
+  var files = [], cells = [];
+
+  pick.addEventListener("change", function () {
+    files = Array.prototype.slice.call(pick.files || []);
+    grid.textContent = ""; cells = [];
+    files.forEach(function (f) {
+      var box = document.createElement("div"); box.className = "item";
+      var img = document.createElement("img");
+      img.alt = ""; img.src = URL.createObjectURL(f);       // preview before upload
+      img.onload = function () { URL.revokeObjectURL(img.src); };
+      var bar = document.createElement("div"); bar.className = "bar";
+      var fill = document.createElement("i"); bar.appendChild(fill);
+      var st = document.createElement("div"); st.className = "st"; st.textContent = "Ready";
+      box.appendChild(img); box.appendChild(bar); box.appendChild(st);
+      grid.appendChild(box);
+      cells.push({ fill: fill, st: st });
+    });
+    go.disabled = !files.length;
+  });
+
+  go.addEventListener("click", function () {
+    go.disabled = true; pick.disabled = true;
+    out.textContent = "Uploading…";
+    FTCloud.uploadMany(files, {
+      onProgress: function (i, p) { cells[i].fill.style.width = p + "%"; cells[i].st.textContent = p + "%"; },
+      onEach: function (i, res, err) {
+        if (err) { cells[i].st.textContent = err.message; cells[i].st.className = "st bad"; }
+        else { cells[i].fill.style.width = "100%"; cells[i].st.textContent = "Uploaded"; cells[i].st.className = "st ok"; }
+      }
+    }).then(function (r) {
+      out.textContent = JSON.stringify(r, null, 2);
+      pick.disabled = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>
