@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Dashboard - FarNaz Tech</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5fa;font-family:Arial,sans-serif;color:#172033}
+header{background:#101b35;color:white;padding:18px 5%;display:flex;justify-content:space-between;align-items:center}
+header a{color:white;text-decoration:none}
+.container{max-width:1100px;margin:25px auto;padding:15px}
+.welcome{background:linear-gradient(120deg,#172b55,#315de0);color:white;padding:25px;border-radius:16px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:220px 1fr;gap:20px}
+.card{background:white;padding:20px;border-radius:14px;box-shadow:0 3px 15px #0000000a;margin-bottom:15px}
+.menu button{display:block;width:100%;padding:13px;margin:5px 0;border:0;background:#f1f4fa;text-align:left;border-radius:8px;cursor:pointer}
+.menu button:hover{background:#dfe8ff}
+input{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #ddd;border-radius:8px}
+.action{background:#2457dc;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer}
+.danger{background:#dc3545;color:white;border:0;padding:10px 15px;border-radius:8px;cursor:pointer}
+.order{border:1px solid #eee;padding:14px;border-radius:10px;margin:10px 0}
+.status{color:#2457dc;font-weight:bold}
+.hidden{display:none}
+small{color:#777}
+@media(max-width:650px){.grid{grid-template-columns:1fr}header{padding:15px}.container{padding:10px}}
+</style>
+</head>
+<body>
+
+<header>
+  <h2>FarNaz Tech</h2>
+  <a href="index.html">← Shop</a>
+</header>
+
+<div class="container">
+  <div class="welcome">
+    <h2>My Account</h2>
+    <p id="welcomeText">Welcome to FarNaz Tech</p>
+  </div>
+
+  <div class="grid">
+    <div class="card menu">
+      <button onclick="show('profile')">👤 My Profile</button>
+      <button onclick="show('orders')">📦 My Orders</button>
+      <button onclick="show('edit')">✏️ Edit Profile</button>
+      <button onclick="show('password')">🔒 Change Password</button>
+      <button onclick="logout()" style="color:red">🚪 Logout</button>
+    </div>
+
+    <div>
+      <section id="profile" class="card">
+        <h2>My Profile</h2>
+        <p><b>Name:</b> <span id="pName">Loading...</span></p>
+        <p><b>Email:</b> <span id="pEmail">-</span></p>
+        <p><b>Phone:</b> <span id="pPhone">-</span></p>
+        <p><b>Account:</b> <span id="pStatus">Active</span></p>
+      </section>
+
+      <section id="orders" class="card hidden">
+        <h2>My Orders</h2>
+        <div id="orderList">Loading orders...</div>
+      </section>
+
+      <section id="edit" class="card hidden">
+        <h2>Edit Profile</h2>
+        <label>Full Name</label>
+        <input id="editName" placeholder="Your name">
+        <label>Phone Number</label>
+        <input id="editPhone" placeholder="Your phone">
+        <button class="action" onclick="saveProfile()">Save Changes</button>
+      </section>
+
+      <section id="password" class="card hidden">
+        <h2>Change Password</h2>
+        <input id="newPassword" type="password" placeholder="New password (minimum 6 characters)">
+        <button class="action" onclick="changePassword()">Update Password</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+let auth,db,user;
+
+if(!window.FT_FIREBASE_CONFIG){
+  alert("Firebase config পাওয়া যায়নি!");
+}else{
+  firebase.initializeApp(window.FT_FIREBASE_CONFIG);
+  auth=firebase.auth();
+  db=firebase.firestore();
+}
+
+function show(id){
+  ["profile","orders","edit","password"].forEach(x=>{
+    document.getElementById(x).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+auth.onAuthStateChanged(async u=>{
+  if(!u){
+    location.href="login.html";
+    return;
+  }
+  user=u;
+  document.getElementById("pEmail").textContent=u.email||"-";
+
+  try{
+    const doc=await db.collection("users").doc(u.uid).get();
+    const data=doc.exists?doc.data():{};
+    document.getElementById("pName").textContent=data.name||u.displayName||"Customer";
+    document.getElementById("pPhone").textContent=data.phone||"-";
+    document.getElementById("welcomeText").textContent="Welcome, "+(data.name||u.email);
+    document.getElementById("editName").value=data.name||u.displayName||"";
+    document.getElementById("editPhone").value=data.phone||"";
+  }catch(e){
+    console.error(e);
+  }
+  loadOrders();
+});
+
+async function saveProfile(){
+  const name=document.getElementById("editName").value.trim();
+  const phone=document.getElementById("editPhone").value.trim();
+  if(!name){alert("Name লিখুন");return}
+  try{
+    await db.collection("users").doc(user.uid).set({
+      name,phone,updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    await user.updateProfile({displayName:name});
+    alert("Profile updated!");
+    location.reload();
+  }catch(e){alert(e.message)}
+}
+
+async function loadOrders(){
+  const box=document.getElementById("orderList");
+  box.textContent="Loading...";
+  try{
+    const snap=await db.collection("orders")
+      .where("userId","==",user.uid).get();
+
+    if(snap.empty){
+      box.innerHTML="<p>No orders found.</p>";
+      return;
+    }
+
+    box.innerHTML="";
+    snap.forEach(doc=>{
+      const o=doc.data();
+      const div=document.createElement("div");
+      div.className="order";
+      const title=document.createElement("b");
+      title.textContent="Order: "+(o.orderNo||doc.id);
+      const total=document.createElement("p");
+      total.textContent="Total: ৳"+(o.total||0);
+      const status=document.createElement("p");
+      status.className="status";
+      status.textContent="Status: "+(o.status||"Pending");
+      div.append(title,total,status);
+      box.appendChild(div);
+    });
+  }catch(e){
+    box.textContent="Orders load হয়নি: "+e.message;
+  }
+}
+
+async function changePassword(){
+  const p=document.getElementById("newPassword").value;
+  if(p.length<6){alert("কমপক্ষে ৬ অক্ষরের password দিন");return}
+  try{
+    await user.updatePassword(p);
+    alert("Password changed successfully!");
+    document.getElementById("newPassword").value="";
+  }catch(e){
+    alert("আবার Login করে চেষ্টা করুন: "+e.message);
+  }
+}
+
+async function logout(){
+  if(confirm("Logout করতে চান?")){
+    await auth.signOut();
+    location.href="login.html";
+  }
+}
+</script>
+</body>
+</html>
