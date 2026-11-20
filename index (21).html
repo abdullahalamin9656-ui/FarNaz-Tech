@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="FarNaz Tech – premium laptops, smartphones, smart watches, gaming gear and gadgets from top global brands." />
+  <meta name="theme-color" content="#0a0f1e" />
+  <title>FarNaz Tech – Premium Tech &amp; Gadgets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+</head>
+<body>
+
+  <!-- Top announcement bar -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <span><i data-lucide="truck"></i> Fast delivery across Bangladesh</span>
+      <span class="hide-sm"><i data-lucide="shield-check"></i> 100% genuine products &amp; warranty</span>
+      <span class="hide-sm"><i data-lucide="phone"></i> Support: <span id="topPhone">+880 1XXX-XXXXXX</span></span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <button class="icon-btn menu-btn" id="menuOpen" aria-label="Open menu"><i data-lucide="menu"></i></button>
+
+      <a href="index.html" class="brand" aria-label="FarNaz Tech home">
+        <span class="brand-mark"><i data-lucide="cpu"></i></span>
+        <span class="brand-text">FarNaz<b>Tech</b></span>
+      </a>
+
+      <div class="search" id="searchBox" role="search">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="search" id="searchInput" placeholder="Search products, brands or categories…" autocomplete="off" aria-label="Search products" />
+        <button class="search-clear" id="searchClear" aria-label="Clear search" hidden><i data-lucide="x"></i></button>
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn search-toggle" id="searchToggle" aria-label="Search"><i data-lucide="search"></i></button>
+        <a href="account.html" class="icon-btn" aria-label="Account"><i data-lucide="user"></i></a>
+        <a href="cart.html" class="icon-btn cart-btn" aria-label="Shopping cart">
+          <i data-lucide="shopping-cart"></i>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </div>
+
+    <nav class="cat-nav" aria-label="Categories">
+      <div class="container cat-nav-inner" id="catNav"></div>
+    </nav>
+  </header>
+
+  <!-- Mobile drawer -->
+  <div class="drawer-overlay" id="drawerOverlay" hidden></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <a href="index.html" class="brand"><span class="brand-mark"><i data-lucide="cpu"></i></span><span class="brand-text">FarNaz<b>Tech</b></span></a>
+      <button class="icon-btn" id="menuClose" aria-label="Close menu"><i data-lucide="x"></i></button>
+    </div>
+    <div class="drawer-links" id="drawerLinks"></div>
+    <div class="drawer-foot">
+      <a href="account.html" class="btn btn-primary btn-block"><i data-lucide="user"></i> My Account</a>
+      <a href="orders.html" class="btn btn-ghost btn-block"><i data-lucide="package"></i> My Orders</a>
+    </div>
+  </aside>
+
+  <main id="main">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-slider" id="heroSlider">
+          <div class="hero-track" id="heroTrack"></div>
+          <button class="hero-nav prev" id="heroPrev" aria-label="Previous slide"><i data-lucide="chevron-left"></i></button>
+          <button class="hero-nav next" id="heroNext" aria-label="Next slide"><i data-lucide="chevron-right"></i></button>
+          <div class="hero-dots" id="heroDots"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust strip -->
+    <section class="trust">
+      <div class="container trust-grid">
+        <div class="trust-item"><i data-lucide="badge-check"></i><div><b>Genuine Products</b><span>Authorized brands only</span></div></div>
+        <div class="trust-item"><i data-lucide="truck"></i><div><b>Fast Delivery</b><span>Nationwide shipping</span></div></div>
+        <div class="trust-item"><i data-lucide="wallet"></i><div><b>Easy Payment</b><span>COD, bKash &amp; Nagad</span></div></div>
+        <div class="trust-item"><i data-lucide="headset"></i><div><b>Real Support</b><span>Friendly help, 7 days</span></div></div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="section" id="categories">
+      <div class="container">
+        <div class="section-head">
+          <div><span class="eyebrow">Browse</span><h2>Featured Categories</h2></div>
+        </div>
+        <div class="cat-grid" id="categoryGrid"></div>
+      </div>
+    </section>
+
+    <!-- Brands -->
+    <section class="section section-alt" id="brands">
+      <div class="container">
+        <div class="section-head">
+          <div><span class="eyebrow">Trusted</span><h2>Featured Brands</h2></div>
+        </div>
+        <div class="brand-grid" id="brandGrid"></div>
+      </div>
+    </section>
+
+    <!-- Trending -->
+    <section class="section" id="trending">
+      <div class="container">
+        <div class="section-head">
+          <div><span class="eyebrow">Hot right now</span><h2>Trending Products</h2></div>
+          <a href="#" class="link-more" data-view="trending">View all <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div class="product-grid" id="trendingGrid"></div>
+      </div>
+    </section>
+
+    <!-- Special offers -->
+    <section class="section offer-section" id="offers">
+      <div class="container">
+        <div class="offer-banner">
+          <div class="offer-copy">
+            <span class="pill pill-light"><i data-lucide="zap"></i> Limited-time deal</span>
+            <h2>Mega Tech Sale — up to 30% off</h2>
+            <p>Laptops, smartphones, smart watches and more at unbeatable prices. Grab yours before the timer runs out.</p>
+            <div class="countdown" id="countdown" aria-live="off">
+              <div><b id="cdD">00</b><span>Days</span></div>
+              <div><b id="cdH">00</b><span>Hours</span></div>
+              <div><b id="cdM">00</b><span>Mins</span></div>
+              <div><b id="cdS">00</b><span>Secs</span></div>
+            </div>
+            <a href="#offerGrid" class="btn btn-white">Shop offers <i data-lucide="arrow-right"></i></a>
+          </div>
+          <div class="offer-art" aria-hidden="true">
+            <div class="orb orb-1"></div><div class="orb orb-2"></div>
+            <i data-lucide="smartphone"></i><i data-lucide="laptop"></i><i data-lucide="watch"></i>
+          </div>
+        </div>
+        <div class="section-head mt">
+          <div><span class="eyebrow">Save more</span><h2>Special Offers</h2></div>
+        </div>
+        <div class="product-grid" id="offerGrid"></div>
+      </div>
+    </section>
+
+    <!-- New arrivals -->
+    <section class="section" id="new-arrivals">
+      <div class="container">
+        <div class="section-head">
+          <div><span class="eyebrow">Just landed</span><h2>New Arrivals</h2></div>
+          <a href="#" class="link-more" data-view="new">View all <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div class="product-grid" id="newGrid"></div>
+      </div>
+    </section>
+
+    <!-- Best selling -->
+    <section class="section section-alt" id="best-selling">
+      <div class="container">
+        <div class="section-head">
+          <div><span class="eyebrow">Customer favourites</span><h2>Best-Selling Products</h2></div>
+          <a href="#" class="link-more" data-view="best">View all <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div class="product-grid" id="bestGrid"></div>
+      </div>
+    </section>
+
+    <!-- Reviews -->
+    <section class="section" id="reviews">
+      <div class="container">
+        <div class="section-head center">
+          <div><span class="eyebrow">Testimonials</span><h2>What Our Customers Say</h2></div>
+        </div>
+        <div class="review-grid" id="reviewGrid"></div>
+      </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="section newsletter-section">
+      <div class="container">
+        <div class="newsletter">
+          <div>
+            <h2>Stay ahead with FarNaz Tech</h2>
+            <p>Subscribe for exclusive deals, new arrivals and tech tips. No spam, ever.</p>
+          </div>
+          <form id="newsletterForm" class="newsletter-form" novalidate>
+            <input type="email" id="newsletterEmail" placeholder="Enter your email address" required aria-label="Email address" />
+            <button type="submit" class="btn btn-primary">Subscribe</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-about">
+        <a href="index.html" class="brand brand-light"><span class="brand-mark"><i data-lucide="cpu"></i></span><span class="brand-text">FarNaz<b>Tech</b></span></a>
+        <p>Your trusted destination for premium laptops, smartphones, smart watches, gaming gear and everyday gadgets.</p>
+        <div class="socials">
+          <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+          <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+          <a href="#" aria-label="YouTube"><i data-lucide="youtube"></i></a>
+          <a href="#" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+        </div>
+      </div>
+      <div>
+        <h4>Shop</h4>
+        <ul id="footerCats"></ul>
+      </div>
+      <div>
+        <h4>Customer</h4>
+        <ul>
+          <li><a href="account.html">My Account</a></li>
+          <li><a href="orders.html">Order Tracking</a></li>
+          <li><a href="cart.html">Shopping Cart</a></li>
+          <li><a href="checkout.html">Checkout</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul class="contact-list">
+          <li><i data-lucide="map-pin"></i> <span id="footAddress">Dhaka, Bangladesh</span></li>
+          <li><i data-lucide="phone"></i> <span id="footPhone">+880 1XXX-XXXXXX</span></li>
+          <li><i data-lucide="mail"></i> <span id="footEmail">support@farnaztech.com</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <span>© <span id="year"></span> FarNaz Tech. All rights reserved.</span>
+        <span class="pay-methods"><i data-lucide="banknote"></i> Cash on Delivery · bKash · Nagad</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+  <button class="to-top" id="toTop" aria-label="Back to top" hidden><i data-lucide="arrow-up"></i></button>
+
+  <script src="js/sample-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
