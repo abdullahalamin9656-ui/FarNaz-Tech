@@ -2,7 +2,7 @@
    FarNaz Tech – Cart, Checkout & Orders styles (Stage 5)
    Uses the colour variables already defined in each page.
    ========================================================== */
-.shop-wrap{padding:6px 0 56px}
+.shop-wrap{padding-top:6px;padding-bottom:56px}
 .co-grid{display:grid;gap:18px;align-items:start}
 .co-main,.co-side{min-width:0}
 @media(min-width:960px){
