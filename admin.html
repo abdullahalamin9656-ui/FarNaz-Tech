@@ -334,8 +334,18 @@ document.querySelectorAll(".nav").forEach(btn=>{
 });
 
 function getFirebase() {
-  if (!window.firebase || !firebase.apps.length) {
-    throw new Error("Firebase initialize হয়নি। firebase-config.js পরীক্ষা করো।");
+  if (typeof firebase === "undefined") {
+    throw new Error("Firebase SDK লোড হয়নি।");
+  }
+
+  const config = window.FT_FIREBASE_CONFIG;
+
+  if (!config || !config.apiKey || !config.projectId) {
+    throw new Error("firebase-config.js পাওয়া যায়নি অথবা Config ভুল।");
+  }
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(config);
   }
 
   auth = firebase.auth();
